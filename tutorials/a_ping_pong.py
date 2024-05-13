@@ -63,6 +63,7 @@ def main():
     node_ping = Node(name="Ping")
     node_pong = Node(name="Pong")
 
+    # 채널의 디폴트 길이 단위는 km
     distance = 2.74 / 1000  # default unit of length in channels is km
     delay_model = PingPongDelayModel()
     channel_1 = QuantumChannel(
