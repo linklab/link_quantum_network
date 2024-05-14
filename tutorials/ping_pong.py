@@ -14,6 +14,7 @@ class PingPongDelayModel(DelayModel):
         self.properties["speed"] = speed_of_light_fraction * 3e5
         self.properties["std"] = standard_deviation
         self.required_properties = ['length']  # in km
+        
 
     def generate_delay(self, **kwargs):
         avg_speed = self.properties["speed"]
