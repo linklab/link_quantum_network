@@ -7,4 +7,5 @@
 ## NetSquid Install
 - https://netsquid.org/
 - pip3 install --extra-index-url https://pypi.netsquid.org netsquid
-
+- pip3 install gym
+- pip install stable-baselines3
