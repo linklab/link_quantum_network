@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Create the environment
-from quantum_entanglement_with_dqn.env import QuantumEntanglementEnv
+from quantum_entanglement_with_dqn.a_env import QuantumEntanglementEnv
 
 
 class RewardLogger(BaseCallback):
