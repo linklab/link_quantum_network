@@ -22,7 +22,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class QNet(nn.Module):
-    def __init__(self, n_features=4, n_multi_actions=[2, 2, 2]):
+    def __init__(self, n_features=6, n_multi_actions=[2, 2, 2]):
         super(QNet, self).__init__()
         self.n_features = n_features
         self.n_multi_actions = n_multi_actions
