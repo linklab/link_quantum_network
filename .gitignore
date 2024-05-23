@@ -162,3 +162,7 @@ cython_debug/
 *.whl
 
 .idea
+
+.idea/
+**/wandb
+**/models
