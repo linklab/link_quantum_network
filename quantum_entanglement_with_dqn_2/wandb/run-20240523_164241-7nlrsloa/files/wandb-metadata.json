@@ -1,0 +1,49 @@
+{
+    "os": "macOS-14.4-arm64-arm-64bit",
+    "python": "3.10.14",
+    "heartbeatAt": "2024-05-23T07:42:42.556993",
+    "startedAt": "2024-05-23T07:42:41.432548",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/Users/yhhan/git/link_quantum_network/quantum_entanglement_with_dqn_2/c_dqn_train.py",
+    "codePathLocal": "c_dqn_train.py",
+    "codePath": "quantum_entanglement_with_dqn_2/c_dqn_train.py",
+    "git": {
+        "remote": "git@github.com:linklab/link_quantum_network.git",
+        "commit": "2698bb2acaf5892d5aa5fe05cc0c902a4e707b01"
+    },
+    "email": "yh21.han@gmail.com",
+    "root": "/Users/yhhan/git/link_quantum_network",
+    "host": "Youn-Hees-MacBook-Air.local",
+    "username": "yhhan",
+    "executable": "/opt/anaconda3/envs/link_quantum_network/bin/python",
+    "cpu_count": 8,
+    "cpu_count_logical": 8,
+    "cpu_freq": {
+        "current": 3504,
+        "min": 600,
+        "max": 3504
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3504,
+            "min": 600,
+            "max": 3504
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 926.3517189025879,
+            "used": 12.538448333740234
+        }
+    },
+    "gpuapple": {
+        "type": "arm",
+        "vendor": "Apple"
+    },
+    "memory": {
+        "total": 24.0
+    }
+}
