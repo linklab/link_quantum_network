@@ -6,7 +6,7 @@ import numpy as np
 class QuantumNetworkEnv(gym.Env):
     def __init__(self):
         super(QuantumNetworkEnv, self).__init__()
-        self.length = 100  # km
+        self.length = 5  # km
         self.attenuation_coefficient = 0.2  # dB/km
         self.lambda_decay = 0.01  # memory decay coefficient
         self.max_time = 1000  # maximum simulation steps
@@ -43,6 +43,7 @@ class QuantumNetworkEnv(gym.Env):
         for i in range(2):  # for each elementary link
             if action[i] == 0:  # set or reset
                 success_prob = self.calculate_success_probability(self.length, self.attenuation_coefficient)
+                # print(f"{success_prob = }")
                 if np.random.rand() < success_prob:
                     self.state[i] = [1, 0]  # entanglement successful
                 else:

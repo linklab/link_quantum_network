@@ -22,13 +22,16 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class QNet(nn.Module):
-    def __init__(self, n_features=4, n_multi_actions=[2, 2, 2]):
+    def __init__(self, n_features=4, n_multi_actions=None):
         super(QNet, self).__init__()
+        if n_multi_actions is None:
+            n_multi_actions = [2, 2, 2]
         self.n_features = n_features
         self.n_multi_actions = n_multi_actions
         self.fc1 = nn.Linear(n_features, 128)  # fully connected
         self.fc2 = nn.Linear(128, 128)
 
+        # Multi-head output for each discrete action dimension
         self.last_fc = []
         for n in range(len(self.n_multi_actions)):
             self.last_fc.append(nn.Linear(128, n_multi_actions[n]))
@@ -38,6 +41,7 @@ class QNet(nn.Module):
     def forward(self, x):
         if isinstance(x, np.ndarray):
             x = torch.tensor(x, dtype=torch.float32, device=DEVICE)
+            x = x.unsqueeze(0) if x.ndim == 1 else x
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
 
@@ -45,7 +49,7 @@ class QNet(nn.Module):
         for n in range(len(self.n_multi_actions)):
             q_values.append(self.last_fc[n](x))
 
-        q_values = torch.stack(q_values)  # shape: [3, 2]
+        q_values = torch.stack(q_values, dim=1)  # shape: [batch_size, num_actions, num_values]
         return q_values
 
     def get_action(self, obs, epsilon=0.1):
@@ -53,13 +57,12 @@ class QNet(nn.Module):
 
         actions = []
         for n in range(len(self.n_multi_actions)):
-            # random.random(): 0.0과 1.0사이의 임의의 값을 반환
             if random.random() < epsilon:
                 actions.append(random.randrange(0, self.n_multi_actions[n]))
             else:
-                actions.append(torch.argmax(q_values[n], dim=-1).item())
+                actions.append(torch.argmax(q_values[:, n], dim=-1).item())
 
-        return actions  # argmax: 가장 큰 값에 대응되는 인덱스 반환
+        return actions  # List of actions for each action dimension
 
 
 Transition = collections.namedtuple(
@@ -100,7 +103,7 @@ class ReplayBuffer:
         rewards = np.array(rewards)
         rewards = np.expand_dims(rewards, axis=-1) if rewards.ndim == 1 else rewards
         dones = np.array(dones, dtype=bool)
-        # actions.shape, rewards.shape, dones.shape: (32, 1) (32, 1) (32,)
+        # actions.shape, rewards.shape, dones.shape: (32, 3) (32, 1) (32,)
 
         # Convert to tensor
         observations = torch.tensor(observations, dtype=torch.float32, device=DEVICE)

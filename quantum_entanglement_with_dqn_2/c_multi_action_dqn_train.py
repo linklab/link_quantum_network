@@ -1,4 +1,5 @@
 # https://gymnasium.farama.org/environments/classic_control/cart_pole/
+import sys
 import time
 import os
 
@@ -171,17 +172,18 @@ class DQN:
         # dones.shape: torch.Size([32])
         observations, actions, next_observations, rewards, dones = batch
 
-        # state_action_values.shape: torch.Size([32, 1])
+        # state_action_values.shape: torch.Size([32, 3, 1])
         q_out = self.q(observations)
+        actions = actions.unsqueeze(-1)
         q_values = q_out.gather(dim=-1, index=actions)
 
         with torch.no_grad():
             q_prime_out = self.target_q(next_observations)
-            # next_state_values.shape: torch.Size([32, 1])
-            max_q_prime = q_prime_out.max(dim=1, keepdim=True).values
+            # next_state_values.shape: torch.Size([32, 3, 1])
+            max_q_prime = q_prime_out.max(dim=-1, keepdim=True).values
             max_q_prime[dones] = 0.0
-
-            # target_state_action_values.shape: torch.Size([32, 1])
+            # target_state_action_values.shape: torch.Size([32, 3, 1])
+            rewards = rewards.unsqueeze(-1).repeat(1, max_q_prime.shape[1], 1)
             targets = rewards + self.gamma * max_q_prime
 
         # loss is just scalar torch value
