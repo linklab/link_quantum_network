@@ -275,7 +275,12 @@ class DQN:
             average_cutoff_time_lst[i] = cutoff_time_avg
             number_of_successful_resets_lst[i, :] = np.array(info["number_of_successful_resets"])
 
-        return episode_reward_lst, np.average(episode_reward_lst), np.average(average_cutoff_time_lst), np.average(number_of_successful_resets_lst, axis=0)
+        return (
+            episode_reward_lst,
+            np.average(episode_reward_lst),
+            np.average(average_cutoff_time_lst),
+            np.average(number_of_successful_resets_lst, axis=0)
+        )
 
 
 def main():
