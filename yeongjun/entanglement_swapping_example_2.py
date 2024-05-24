@@ -538,7 +538,8 @@ def example_sim_setup(node_A, node_B, node_R, num_runs, purify="filter", epsilon
 network = example_network_setup()
 repeater_example, dc = example_sim_setup(
     network.get_node("node_A"), network.get_node("node_B"),
-    network.get_node("node_R"), num_runs=100)
+    network.get_node("node_R"), num_runs=100
+)
 repeater_example.start()
 ns.sim_run()
 print("Average fidelity of generated entanglement via a repeater "

@@ -79,8 +79,11 @@ class DQN:
         total_train_start_time = time.time()
 
         validation_episode_reward_avg = 0.0
+        validation_cutoff_time_avg = 0.0
+        validation_number_of_successful_resets_avg_lst = [0.0, 0.0, 0.0]
 
         is_terminated = False
+        info = None
 
         for n_episode in range(1, self.max_num_episodes + 1):
             epsilon = self.epsilon_scheduled(n_episode)
@@ -97,7 +100,7 @@ class DQN:
 
                 action = self.q.get_action(observation, epsilon)
 
-                next_observation, reward, terminated, truncated, _ = self.env.step(action)
+                next_observation, reward, terminated, truncated, info = self.env.step(action)
 
                 transition = Transition(observation, action, next_observation, reward, terminated)
 
@@ -113,6 +116,9 @@ class DQN:
             total_training_time = time.time() - total_train_start_time
             total_training_time = time.strftime('%H:%M:%S', time.gmtime(total_training_time))
 
+            number_of_successful_resets_list = info["number_of_successful_resets"]
+            cutoff_time_avg = np.average(info["cutoff_time_list"])
+
             if n_episode % self.print_episode_interval == 0:
                 print(
                     "[Episode {:3,}, Time Steps {:6,}]".format(n_episode, self.time_steps),
@@ -121,15 +127,18 @@ class DQN:
                     "Loss: {:6.3f},".format(loss),
                     "Epsilon: {:4.2f},".format(epsilon),
                     "Training Steps: {:5,},".format(self.training_time_steps),
-                    "Elapsed Time: {}".format(total_training_time)
+                    "Elapsed Time: {}".format(total_training_time),
+                    "Number of Successful Resets: " + " | ".join('{:5,}'.format(k) for k in number_of_successful_resets_list) + ", ",
+                    "Mean Cutoff-Time: {:4.2f}".format(cutoff_time_avg)
                 )
 
             if n_episode % self.train_num_episodes_before_next_test == 0:
-                validation_episode_reward_lst, validation_episode_reward_avg = self.validate()
+                validation_episode_reward_lst, validation_episode_reward_avg, validation_cutoff_time_avg, validation_number_of_successful_resets_avg_lst = self.validate()
 
-                print("[Validation Episode Reward: {0}] Average: {1:.3f}".format(
-                    validation_episode_reward_lst, validation_episode_reward_avg
-                ))
+                print("[Validation] Episode Reward: {0}, Average Episode Reward: {1:.3f},".format(validation_episode_reward_lst, validation_episode_reward_avg),
+                      "Number of Successful Resets: " + " | ".join('{:5,}'.format(k) for k in validation_number_of_successful_resets_avg_lst) + ", ",
+                      "Average Cutoff-time: {:4.2f},".format(validation_cutoff_time_avg)
+                )
 
                 if validation_episode_reward_avg > self.episode_reward_avg_solved:
                     print("Solved in {0:,} steps ({1:,} training steps)!".format(
@@ -141,10 +150,18 @@ class DQN:
             if self.use_wandb:
                 self.wandb.log({
                     "[VALIDATION] Mean Episode Reward ({0} Episodes)".format(self.validation_num_episodes): validation_episode_reward_avg,
+                    "[VALIDATION] Mean Cutoff-Time ({0} Episodes)".format(self.validation_num_episodes): validation_cutoff_time_avg,
+                    "[VALIDATION] Mean e-link-1's Number of Successful Reset ({0} Episodes)".format(self.validation_num_episodes): validation_number_of_successful_resets_avg_lst[0],
+                    "[VALIDATION] Mean e-link-2's Number of Successful Reset ({0} Episodes)".format(self.validation_num_episodes): validation_number_of_successful_resets_avg_lst[1],
+                    "[VALIDATION] Mean v-link's Number of Successful Reset ({0} Episodes)".format(self.validation_num_episodes): validation_number_of_successful_resets_avg_lst[2],
                     "[TRAIN] Episode Reward": episode_reward,
                     "[TRAIN] Loss": loss if loss != 0.0 else 0.0,
                     "[TRAIN] Epsilon": epsilon,
                     "[TRAIN] Replay buffer": self.replay_buffer.size(),
+                    "[TRAIN] Mean Cutoff-Time": cutoff_time_avg,
+                    "[TRAIN] Mean e-link-1's Number of Successful Reset": number_of_successful_resets_list[0],
+                    "[TRAIN] Mean e-link-2's Number of Successful Reset": number_of_successful_resets_list[1],
+                    "[TRAIN] Mean v-link's Number of Successful Reset": number_of_successful_resets_list[2],
                     "Training Episode": n_episode,
                     "Training Steps": self.training_time_steps
                 })
@@ -228,7 +245,9 @@ class DQN:
 
     def validate(self):
         episode_reward_lst = np.zeros(shape=(self.validation_num_episodes,), dtype=float)
-
+        average_cutoff_time_lst = np.zeros(shape=(self.validation_num_episodes,), dtype=float)
+        number_of_successful_resets_lst = np.zeros(shape=(self.validation_num_episodes,), dtype=float)
+        info = None
         for i in range(self.validation_num_episodes):
             episode_reward = 0
 
@@ -239,26 +258,36 @@ class DQN:
             while not done:
                 action = self.q.get_action(observation, epsilon=0.0)
 
-                next_observation, reward, terminated, truncated, _ = self.test_env.step(action)
+                next_observation, reward, terminated, truncated, info = self.test_env.step(action)
 
                 episode_reward += reward
                 observation = next_observation
                 done = terminated or truncated
 
             episode_reward_lst[i] = episode_reward
+            average_cutoff_time_lst[i] = np.average(info["cutoff_time_list"])
+            number_of_successful_resets_lst[i] = info["number_of_successful_resets"]
 
-        return episode_reward_lst, np.average(episode_reward_lst)
+        return episode_reward_lst, np.average(episode_reward_lst), np.average(average_cutoff_time_lst), np.average(number_of_successful_resets_lst, dim=0)
 
 
 def main():
-    ENV_NAME = "QuantumNetwork"
+    env_config = {
+        "env_name": "QuantumNetwork",
+        "max_steps": 10000,                 # maximum simulation steps
+        "fiber_length": 100,                 # km
+        "light_v": 200_000,                 # light propagation speed in the fiber, km/s
+        "attenuation_coefficient": 0.2,     # dB/km
+        "lambda_decay": 0.5,                # memory decay coefficient
+        "eta0": 0.01                        # initial memory efficiency
+    }
 
-    env = QuantumNetworkEnv()
-    test_env = QuantumNetworkEnv()
+    env = QuantumNetworkEnv(env_config)
+    test_env = QuantumNetworkEnv(env_config)
 
     config = {
-        "env_name": ENV_NAME,                       # 환경의 이름
-        "max_num_episodes": 3_000,                  # 훈련을 위한 최대 에피소드 횟수
+        "env_name": env_config["env_name"],         # 환경의 이름
+        "max_num_episodes": 1_000,                  # 훈련을 위한 최대 에피소드 횟수
         "batch_size": 32,                           # 훈련시 배치에서 한번에 가져오는 랜덤 배치 사이즈
         "learning_rate": 0.0001,                    # 학습율
         "gamma": 0.99,                              # 감가율
