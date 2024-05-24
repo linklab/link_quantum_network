@@ -44,7 +44,7 @@ class DQN:
         self.epsilon_end = config["epsilon_end"]
         self.epsilon_final_scheduled_percent = config["epsilon_final_scheduled_percent"]
         self.print_episode_interval = config["print_episode_interval"]
-        self.train_num_episodes_before_next_test = config["train_num_episodes_before_next_test"]
+        self.train_num_episodes_before_next_validation = config["train_num_episodes_before_next_validation"]
         self.validation_num_episodes = config["validation_num_episodes"]
         self.episode_reward_avg_solved = config["episode_reward_avg_solved"]
 
@@ -135,7 +135,7 @@ class DQN:
                     "Mean Cutoff-Time: {:4.2f}".format(cutoff_time_avg)
                 )
 
-            if n_episode % self.train_num_episodes_before_next_test == 0:
+            if n_episode % self.train_num_episodes_before_next_validation == 0:
                 validation_episode_reward_lst, validation_episode_reward_avg, validation_cutoff_time_avg, validation_number_of_successful_resets_avg_lst = self.validate()
 
                 print("[Validation] Episode Reward: {0}, Average Episode Reward: {1:.3f},".format(validation_episode_reward_lst, validation_episode_reward_avg),
@@ -275,7 +275,12 @@ class DQN:
             average_cutoff_time_lst[i] = cutoff_time_avg
             number_of_successful_resets_lst[i, :] = np.array(info["number_of_successful_resets"])
 
-        return episode_reward_lst, np.average(episode_reward_lst), np.average(average_cutoff_time_lst), np.average(number_of_successful_resets_lst, axis=0)
+        return (
+            episode_reward_lst,
+            np.average(episode_reward_lst),
+            np.average(average_cutoff_time_lst),
+            np.average(number_of_successful_resets_lst, axis=0)
+        )
 
 
 def main():
@@ -305,7 +310,7 @@ def main():
         "epsilon_end": 0.05,                        # Epsilon 최종 값
         "epsilon_final_scheduled_percent": 0.3,    # Epsilon 최종 값으로 스케줄되는 마지막 에피소드 비율
         "print_episode_interval": 10,               # Episode 통계 출력에 관한 에피소드 간격
-        "train_num_episodes_before_next_test": 50,  # 검증 사이 마다 각 훈련 episode 간격
+        "train_num_episodes_before_next_validation": 50,  # 검증 사이 마다 각 훈련 episode 간격
         "validation_num_episodes": 3,               # 검증에 수행하는 에피소드 횟수
         "episode_reward_avg_solved": 750,           # 훈련 종료를 위한 검증 에피소드 리워드의 Average
     }
