@@ -42,7 +42,8 @@ class QuantumNetworkEnv(gym.Env):
 
         print("#" * 100)
         print(f"max_step: {self.max_steps:,}\t\t\t\t\tfiber_length: {self.fiber_length:,}km\t\tligt_v: {light_v:,}km/s")
-        print(f"attenuation_coefficient: {self.attenuation_coefficient:.4f}\tlambda_decay: {self.lambda_decay}\t\tslot_duration: {self.slot_duration}sec.")
+        print(f"attenuation_coefficient: {self.attenuation_coefficient:.4f}\tlambda_decay: {self.lambda_decay}")
+        print(f"slot_duration: {self.slot_duration}sec.")
         print(f"prob_e: {self.calculate_entangle_success_probability():.2f} (constant)")
         print(f"prob_s: {self.calculate_swap_success_probability([0.0, 0.0]):.2f} (attenuation)")
         print("#" * 100)
