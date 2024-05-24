@@ -53,6 +53,7 @@ class QuantumNetworkEnv(gym.Env):
             self.state = np.array([[0, -1], [0, -1], [1, 0]], dtype=np.float32)
         else:
             self.state = np.array([[0, -1], [0, -1], [0, -1]], dtype=np.float32)
+        self.is_both_elementary_links_entangled = False
 
     def update_cutoff_time(self, link_num):
         if self.is_both_elementary_links_entangled:  # both links entangled
