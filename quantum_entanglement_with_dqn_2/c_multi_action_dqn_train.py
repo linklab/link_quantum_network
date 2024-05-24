@@ -271,11 +271,7 @@ def main():
         "print_episode_interval": 10,               # Episode 통계 출력에 관한 에피소드 간격
         "train_num_episodes_before_next_test": 50,  # 검증 사이 마다 각 훈련 episode 간격
         "validation_num_episodes": 3,               # 검증에 수행하는 에피소드 횟수
-<<<<<<< HEAD
         "episode_reward_avg_solved": 750,           # 훈련 종료를 위한 검증 에피소드 리워드의 Average
-=======
-        "episode_reward_avg_solved": 500,           # 훈련 종료를 위한 검증 에피소드 리워드의 Average
->>>>>>> 2a94ef09bd824e9480464ec68b1f7038f60e9da4
     }
 
     use_wandb = True

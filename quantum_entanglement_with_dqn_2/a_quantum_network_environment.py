@@ -34,6 +34,8 @@ class QuantumNetworkEnv(gym.Env):
         self.terminated = False
         self.truncated = False
         self.info = {}
+        self.cutoff_time = [0, 0, 0]
+        self.number_of_successful_resets = [0, 0, 0]
         return self.state.flatten(), self.info
 
     def step(self, action):
@@ -46,8 +48,10 @@ class QuantumNetworkEnv(gym.Env):
                 # print(f"{success_prob = }")
                 if np.random.rand() < success_prob:
                     self.state[i] = [1, 0]  # entanglement successful
+                    self.number_of_successful_resets[i] += 1
                 else:
                     self.state[i] = [0, -1]  # entanglement failed
+                    self.state[2] = [0, -1]
             else:  # wait
                 if self.state[i][0] == 1:
                     assert self.state[i][1] != -1
@@ -60,6 +64,7 @@ class QuantumNetworkEnv(gym.Env):
                 )
                 if np.random.rand() < swap_success_prob:
                     self.state[2] = [1, 0]  # virtual link successful
+                    self.number_of_successful_resets[2] += 1
                     reward = 1
                 else:
                     self.state[2] = [0, -1]  # virtual link failed
@@ -73,7 +78,9 @@ class QuantumNetworkEnv(gym.Env):
             self.terminated = True
 
         self.truncated = False
-        self.info = {}
+        self.info = {
+            "number_of_successful_resets": self.number_of_successful_resets
+        }
 
         return self.state.flatten(), reward, self.terminated, self.truncated, self.info
 
