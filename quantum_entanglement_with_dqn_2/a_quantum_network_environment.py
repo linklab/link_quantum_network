@@ -53,19 +53,20 @@ class QuantumNetworkEnv(gym.Env):
                     assert self.state[i][1] != -1
                     self.state[i][1] += 1  # increase age if entangled
 
-        i = 2 # for the virtual link
-        if action[i] == 0:  # attempt swap set or reset
+        if action[2] == 0:  # attempt swap set or reset
             if self.state[0][0] == 1 and self.state[1][0] == 1:  # both links entangled
-                swap_success_prob = self.calculate_swap_success_probability(self.state[0][1], self.state[1][1], self.lambda_decay)
+                swap_success_prob = self.calculate_swap_success_probability(
+                    self.state[0][1], self.state[1][1], self.lambda_decay
+                )
                 if np.random.rand() < swap_success_prob:
-                    self.state[i] = [1, 0]  # virtual link successful
+                    self.state[2] = [1, 0]  # virtual link successful
                     reward = 1
                 else:
-                    self.state[i] = [0, -1]  # virtual link failed
+                    self.state[2] = [0, -1]  # virtual link failed
         else:
             # update the age of virtual link if exists
-            if self.state[i][0] == 1:
-                self.state[i][1] += 1
+            if self.state[2][0] == 1:
+                self.state[2][1] += 1
 
         # check if done
         if self.time_step >= self.max_time:
