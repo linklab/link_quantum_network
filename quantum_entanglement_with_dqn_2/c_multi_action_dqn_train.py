@@ -117,7 +117,10 @@ class DQN:
             total_training_time = time.strftime('%H:%M:%S', time.gmtime(total_training_time))
 
             number_of_successful_resets_list = info["number_of_successful_resets"]
-            cutoff_time_avg = np.average(info["cutoff_time_list"])
+            if info["cutoff_time_list"] == []:
+                cutoff_time_avg = 0
+            else:
+                cutoff_time_avg = np.average(info["cutoff_time_list"])
 
             if n_episode % self.print_episode_interval == 0:
                 print(
@@ -136,7 +139,7 @@ class DQN:
                 validation_episode_reward_lst, validation_episode_reward_avg, validation_cutoff_time_avg, validation_number_of_successful_resets_avg_lst = self.validate()
 
                 print("[Validation] Episode Reward: {0}, Average Episode Reward: {1:.3f},".format(validation_episode_reward_lst, validation_episode_reward_avg),
-                      "Number of Successful Resets: " + " | ".join('{:5,}'.format(k) for k in validation_number_of_successful_resets_avg_lst) + ", ",
+                      "Average Number of Successful Resets: " + " | ".join('{:5.2f}'.format(k) for k in validation_number_of_successful_resets_avg_lst) + ", ",
                       "Average Cutoff-time: {:4.2f},".format(validation_cutoff_time_avg)
                 )
 
@@ -246,7 +249,7 @@ class DQN:
     def validate(self):
         episode_reward_lst = np.zeros(shape=(self.validation_num_episodes,), dtype=float)
         average_cutoff_time_lst = np.zeros(shape=(self.validation_num_episodes,), dtype=float)
-        number_of_successful_resets_lst = np.zeros(shape=(self.validation_num_episodes,), dtype=float)
+        number_of_successful_resets_lst = np.zeros(shape=(self.validation_num_episodes, 3), dtype=float)
         info = None
         for i in range(self.validation_num_episodes):
             episode_reward = 0
@@ -265,10 +268,14 @@ class DQN:
                 done = terminated or truncated
 
             episode_reward_lst[i] = episode_reward
-            average_cutoff_time_lst[i] = np.average(info["cutoff_time_list"])
-            number_of_successful_resets_lst[i] = info["number_of_successful_resets"]
+            if info["cutoff_time_list"] == []:
+                cutoff_time_avg = 0.0
+            else:
+                cutoff_time_avg = np.average(info["cutoff_time_list"])
+            average_cutoff_time_lst[i] = cutoff_time_avg
+            number_of_successful_resets_lst[i, :] = np.array(info["number_of_successful_resets"])
 
-        return episode_reward_lst, np.average(episode_reward_lst), np.average(average_cutoff_time_lst), np.average(number_of_successful_resets_lst, dim=0)
+        return episode_reward_lst, np.average(episode_reward_lst), np.average(average_cutoff_time_lst), np.average(number_of_successful_resets_lst, axis=0)
 
 
 def main():
