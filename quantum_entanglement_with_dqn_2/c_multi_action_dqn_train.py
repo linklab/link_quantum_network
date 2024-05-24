@@ -44,7 +44,7 @@ class DQN:
         self.epsilon_end = config["epsilon_end"]
         self.epsilon_final_scheduled_percent = config["epsilon_final_scheduled_percent"]
         self.print_episode_interval = config["print_episode_interval"]
-        self.train_num_episodes_before_next_test = config["train_num_episodes_before_next_test"]
+        self.train_num_episodes_before_next_validation = config["train_num_episodes_before_next_validation"]
         self.validation_num_episodes = config["validation_num_episodes"]
         self.episode_reward_avg_solved = config["episode_reward_avg_solved"]
 
@@ -135,7 +135,7 @@ class DQN:
                     "Mean Cutoff-Time: {:4.2f}".format(cutoff_time_avg)
                 )
 
-            if n_episode % self.train_num_episodes_before_next_test == 0:
+            if n_episode % self.train_num_episodes_before_next_validation == 0:
                 validation_episode_reward_lst, validation_episode_reward_avg, validation_cutoff_time_avg, validation_number_of_successful_resets_avg_lst = self.validate()
 
                 print("[Validation] Episode Reward: {0}, Average Episode Reward: {1:.3f},".format(validation_episode_reward_lst, validation_episode_reward_avg),
@@ -279,33 +279,23 @@ class DQN:
 
 
 def main():
-    env_config = {
-        "env_name": "QuantumNetwork",
-        "max_steps": 10000,                 # maximum simulation steps
-        "fiber_length": 100,                 # km
-        "light_v": 200_000,                 # light propagation speed in the fiber, km/s
-        "attenuation_coefficient": 0.2,     # dB/km
-        "lambda_decay": 0.5,                # memory decay coefficient
-        "eta0": 0.01                        # initial memory efficiency
-    }
-
-    env = QuantumNetworkEnv(env_config)
-    test_env = QuantumNetworkEnv(env_config)
+    env = QuantumNetworkEnv()
+    test_env = QuantumNetworkEnv()
 
     config = {
-        "env_name": env_config["env_name"],         # 환경의 이름
+        "env_name": env.env_name,         # 환경의 이름
         "max_num_episodes": 1_000,                  # 훈련을 위한 최대 에피소드 횟수
-        "batch_size": 32,                           # 훈련시 배치에서 한번에 가져오는 랜덤 배치 사이즈
+        "batch_size": 256,                          # 훈련시 배치에서 한번에 가져오는 랜덤 배치 사이즈
         "learning_rate": 0.0001,                    # 학습율
         "gamma": 0.99,                              # 감가율
-        "steps_between_train": 1,                   # 훈련 사이의 환경 스텝 수
-        "target_sync_step_interval": 500,           # 기존 Q 모델을 타깃 Q 모델로 동기화시키는 step 간격
-        "replay_buffer_size": 30_000,               # 리플레이 버퍼 사이즈
-        "epsilon_start": 0.5,                      # Epsilon 초기 값
+        "steps_between_train": 2,                   # 훈련 사이의 환경 스텝 수
+        "target_sync_step_interval": 1000,          # 기존 Q 모델을 타깃 Q 모델로 동기화시키는 step 간격
+        "replay_buffer_size": 300_000,              # 리플레이 버퍼 사이즈
+        "epsilon_start": 0.75,                      # Epsilon 초기 값
         "epsilon_end": 0.01,                        # Epsilon 최종 값
-        "epsilon_final_scheduled_percent": 0.2,    # Epsilon 최종 값으로 스케줄되는 마지막 에피소드 비율
+        "epsilon_final_scheduled_percent": 0.9,     # Epsilon 최종 값으로 스케줄되는 마지막 에피소드 비율
         "print_episode_interval": 10,               # Episode 통계 출력에 관한 에피소드 간격
-        "train_num_episodes_before_next_test": 50,  # 검증 사이 마다 각 훈련 episode 간격
+        "train_num_episodes_before_next_validation": 50,  # 검증 사이 마다 각 훈련 episode 간격
         "validation_num_episodes": 3,               # 검증에 수행하는 에피소드 횟수
         "episode_reward_avg_solved": 750,           # 훈련 종료를 위한 검증 에피소드 리워드의 Average
     }

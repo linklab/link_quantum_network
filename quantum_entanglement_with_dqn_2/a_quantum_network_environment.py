@@ -4,30 +4,48 @@ import numpy as np
 
 
 class QuantumNetworkEnv(gym.Env):
-    def __init__(self, config):
+    def __init__(
+        self,
+        max_steps=1_000, fiber_length=100, light_v=200_000, attenuation_coefficient=0.2, lambda_decay=0.5, eta0=1.0
+    ):
         """
         ----------
           config
         ------------------------------------------------------------------------------
         env_name
         max_steps: maximum simulation steps
-        fiber_length: maximum simulation steps
-        light_v: light propagation speed in the fiber, km/s
-        attenuation_coefficient: fiber losses of 0.2 dB/km achievable around 1,550 nm
+        fiber_length (km): fiber length
+        light_v (km/s): light propagation speed in the fiber, km/s
+        attenuation_coefficient (dB/km): fiber losses of 0.2 dB/km achievable around 1,550 nm
         lambda_decay: memory decay coefficient
-        initial memory efficiency
+        eta0: initial memory efficiency (Paper: a zero-time efficiency of 1.)
         ------------------------------------------------------------------------------
         """
         super(QuantumNetworkEnv, self).__init__()
 
-        self.env_name = config["env_name"]
-        self.max_steps = config["max_steps"]
-        self.fiber_length = config["fiber_length"]
-        self.light_v = config["light_v"]
-        self.attenuation_coefficient = config["attenuation_coefficient"] * np.log(10) / 10
-        self.lambda_decay = config["lambda_decay"]
-        self.eta0 = config["eta0"]
+        self.env_name = "QuantumNetwork"
+        self.max_steps = max_steps
+        self.fiber_length = fiber_length
+        self.light_v = light_v
+
+        # For prob_e
+        self.initial_efficiency = 1.0
+        self.attenuation_coefficient = attenuation_coefficient * np.log(10) / 10
+
+        # For prob_s
+        self.lambda_decay = lambda_decay
+        self.eta0 = eta0
+
+        # Slot Duration
         self.slot_duration = self.fiber_length / self.light_v    # time step 단위
+
+
+        print("#" * 100)
+        print(f"max_step: {self.max_steps:,}\t\t\t\t\tfiber_length: {self.fiber_length:,}km\t\tligt_v: {light_v:,}km/s")
+        print(f"attenuation_coefficient: {self.attenuation_coefficient:.4f}\tlambda_decay: {self.lambda_decay}\t\tslot_duration: {self.slot_duration}sec.")
+        print(f"prob_e: {self.calculate_entangle_success_probability():.2f} (constant)")
+        print(f"prob_s: {self.calculate_swap_success_probability([0.0, 0.0]):.2f} (attenuation)")
+        print("#" * 100)
 
         self.action_space = spaces.MultiDiscrete([2, 2, 2])  # actions: reset or wait for each link
         self.observation_space = spaces.Box(low=0, high=self.max_steps, shape=(3, 2), dtype=np.float32)  # state: [entanglement status, age]
@@ -35,16 +53,16 @@ class QuantumNetworkEnv(gym.Env):
         self.reset()
 
     def calculate_entangle_success_probability(self):
-        pe = np.exp(-self.attenuation_coefficient * self.fiber_length)
+        pe = self.initial_efficiency * np.exp(-self.attenuation_coefficient * self.fiber_length)
         return pe
 
-    def memory_efficiency(self, t_max):
+    def memory_efficiency(self, time):
         # Memory efficiency eta_m for Mims model
-        eta_m = self.eta0 * np.exp(-self.lambda_decay * t_max)
+        eta_m = self.eta0 * np.exp(-self.lambda_decay * time)
         return eta_m
 
     def calculate_swap_success_probability(self, times: list):
-        time = max(times) * self.slot_duration
+        time = min(times)
         ps = self.memory_efficiency(time)
         return ps
 
@@ -80,7 +98,7 @@ class QuantumNetworkEnv(gym.Env):
                 success_prob = self.calculate_entangle_success_probability()
                 # print(f"{i}:", f"{success_prob = }")
                 if np.random.rand() < success_prob:
-                    self.state[i] = [1, 0]  # entanglement successful
+                    self.state[i] = [1, 0]   # successful entanglement
                     self.state[2] = [0, -1]  # reset virtual link
                     self.number_of_successful_resets[i] += 1
                 else:
@@ -88,7 +106,7 @@ class QuantumNetworkEnv(gym.Env):
             else:  # wait
                 if self.state[i][0] == 1:
                     assert self.state[i][1] != -1
-                    self.state[i][1] += 1  # increase age if entangled
+                    self.state[i][1] += self.slot_duration  # increase age if entangled
 
         if self.state[0][0] == 1 and self.state[1][0] == 1:  # both links entangled
             self.is_both_elementary_links_entangled = True
@@ -110,7 +128,7 @@ class QuantumNetworkEnv(gym.Env):
         else:
             if self.state[2][0] == 1:   # virtual link entangled
                 assert self.state[2][1] != -1
-                self.state[2][1] += 1     # increase age
+                self.state[2][1] += self.slot_duration     # increase age
 
         # check if done
         if self.time_step >= self.max_steps:
@@ -136,17 +154,7 @@ class RandomAgent(object):
 
 # 테스트 코드
 if __name__ == "__main__":
-    env_config = {
-        "env_name": "QuantumNetwork",
-        "max_steps": 1000,                  # maximum simulation steps
-        "fiber_length": 100,                # km
-        "light_v": 200_000,                 # light propagation speed in the fiber, km/s
-        "attenuation_coefficient": 0.2,     # dB/km
-        "lambda_decay": 0.5,                # memory decay coefficient
-        "eta0": 0.01                        # initial memory efficiency
-    }
-    
-    env = QuantumNetworkEnv(env_config)
+    env = QuantumNetworkEnv()
     agent = RandomAgent(env)
 
     obs, _ = env.reset()
