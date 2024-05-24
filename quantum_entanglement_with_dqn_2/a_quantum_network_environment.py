@@ -6,7 +6,7 @@ import numpy as np
 class QuantumNetworkEnv(gym.Env):
     def __init__(self):
         super(QuantumNetworkEnv, self).__init__()
-        self.length = 5  # km
+        self.length = 10  # km
         self.attenuation_coefficient = 0.2  # dB/km
         self.lambda_decay = 0.01  # memory decay coefficient
         self.max_time = 1000  # maximum simulation steps
