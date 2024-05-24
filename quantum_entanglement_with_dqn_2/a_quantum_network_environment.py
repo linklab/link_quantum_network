@@ -20,7 +20,8 @@ class QuantumNetworkEnv(gym.Env):
         initial_efficiency = 1.0
         return initial_efficiency * np.exp(-attenuation_coefficient * length)
 
-    def memory_efficiency(self, time, lambda_decay, eta_m0=1.0):
+    def memory_efficiency(self, time, lambda_decay):
+        eta_m0 = 1.0
         return eta_m0 * np.exp(-lambda_decay * time)
 
     def calculate_swap_success_probability(self, time1, time2, lambda_decay, eta_m0=1.0):
