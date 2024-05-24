@@ -1,10 +1,9 @@
-# https://gymnasium.farama.org/environments/classic_control/cart_pole/
 import os
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
-
-import gymnasium as gym
 import torch
 
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
+from quantum_entanglement_with_dqn_2.a_quantum_network_environment import QuantumNetworkEnv
 from b_multi_action_qnet import QNet, MODEL_DIR
 
 
@@ -35,9 +34,9 @@ def test(env, q, num_episodes):
 
 
 def main_play(num_episodes, env_name):
-    env = gym.make(env_name, render_mode="human")
+    env = QuantumNetworkEnv()
 
-    q = QNet(n_features=4, n_actions=2)
+    q = QNet(n_features=6, n_multi_actions=[2, 2, 2])
     model_params = torch.load(os.path.join(MODEL_DIR, "dqn_{0}_latest.pth".format(env_name)))
     q.load_state_dict(model_params)
 
@@ -48,6 +47,6 @@ def main_play(num_episodes, env_name):
 
 if __name__ == "__main__":
     NUM_EPISODES = 3
-    ENV_NAME = "CartPole-v1"
+    ENV_NAME = "QuantumNetwork"
 
     main_play(num_episodes=NUM_EPISODES, env_name=ENV_NAME)

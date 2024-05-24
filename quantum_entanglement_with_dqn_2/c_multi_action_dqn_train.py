@@ -1,5 +1,3 @@
-# https://gymnasium.farama.org/environments/classic_control/cart_pole/
-import sys
 import time
 import os
 
@@ -7,7 +5,6 @@ from quantum_entanglement_with_dqn_2.a_quantum_network_environment import Quantu
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
-import gymnasium as gym
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -158,7 +155,9 @@ class DQN:
         total_training_time = time.time() - total_train_start_time
         total_training_time = time.strftime('%H:%M:%S', time.gmtime(total_training_time))
         print("Total Training End : {}".format(total_training_time))
-        self.wandb.finish()
+
+        if self.use_wandb:
+            self.wandb.finish()
 
     def train(self):
         self.training_time_steps += 1
@@ -177,14 +176,19 @@ class DQN:
         actions = actions.unsqueeze(-1)
         q_values = q_out.gather(dim=-1, index=actions)
 
+        # q_out.shape: torch.Size([32, 3, 2])
+        # actions.shape: torch.Size([32, 3, 1])
+        # q_values.shape: torch.Size([32, 3, 1])
+
         with torch.no_grad():
             q_prime_out = self.target_q(next_observations)
-            # next_state_values.shape: torch.Size([32, 3, 1])
+            # q_prime_out.shape: torch.Size([32, 3, 2])
             max_q_prime = q_prime_out.max(dim=-1, keepdim=True).values
+            # q_prime_out.shape: torch.Size([32, 3, 1])
             max_q_prime[dones] = 0.0
-            # target_state_action_values.shape: torch.Size([32, 3, 1])
             rewards = rewards.unsqueeze(-1).repeat(1, max_q_prime.shape[1], 1)
             targets = rewards + self.gamma * max_q_prime
+            # targets.shape: torch.Size([32, 3, 1])
 
         # loss is just scalar torch value
         loss = F.mse_loss(targets.detach(), q_values)
@@ -267,10 +271,10 @@ def main():
         "print_episode_interval": 10,               # Episode 통계 출력에 관한 에피소드 간격
         "train_num_episodes_before_next_test": 50,  # 검증 사이 마다 각 훈련 episode 간격
         "validation_num_episodes": 3,               # 검증에 수행하는 에피소드 횟수
-        "episode_reward_avg_solved": 490,           # 훈련 종료를 위한 검증 에피소드 리워드의 Average
+        "episode_reward_avg_solved": 750,           # 훈련 종료를 위한 검증 에피소드 리워드의 Average
     }
 
-    use_wandb = False
+    use_wandb = True
     dqn = DQN(
         env=env, test_env=test_env, config=config, use_wandb=use_wandb
     )
