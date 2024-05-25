@@ -132,7 +132,7 @@ class DQN:
                     "Training Steps: {:5,},".format(self.training_time_steps),
                     "Elapsed Time: {}".format(total_training_time),
                     "Number of Successful Resets: " + " | ".join('{:5,}'.format(k) for k in number_of_successful_resets_list) + ", ",
-                    "Mean Cutoff-Time: {:4.2f}".format(cutoff_time_avg)
+                    "Mean Cutoff-Time: {:.6f}".format(cutoff_time_avg)
                 )
 
             if n_episode % self.train_num_episodes_before_next_validation == 0:
@@ -140,7 +140,7 @@ class DQN:
 
                 print("[Validation] Episode Reward: {0}, Average Episode Reward: {1:.3f},".format(validation_episode_reward_lst, validation_episode_reward_avg),
                       "Average Number of Successful Resets: " + " | ".join('{:5.2f}'.format(k) for k in validation_number_of_successful_resets_avg_lst) + ", ",
-                      "Average Cutoff-time: {:4.2f},".format(validation_cutoff_time_avg)
+                      "Average Cutoff-time: {:.6f},".format(validation_cutoff_time_avg)
                 )
 
                 if validation_episode_reward_avg > self.episode_reward_avg_solved:
@@ -259,7 +259,7 @@ class DQN:
             done = False
 
             while not done:
-                action = self.q.get_action(observation, epsilon=0.0)
+                action = self.q.get_action(observation, epsilon=0.01)
 
                 next_observation, reward, terminated, truncated, info = self.test_env.step(action)
 
@@ -268,10 +268,14 @@ class DQN:
                 done = terminated or truncated
 
             episode_reward_lst[i] = episode_reward
+
             if info["cutoff_time_list"] == []:
                 cutoff_time_avg = 0.0
+                # print(info["cutoff_time_list"], cutoff_time_avg, "$$$$$$$$$$$$ - 1")
             else:
                 cutoff_time_avg = np.average(info["cutoff_time_list"])
+                # print(info["cutoff_time_list"], cutoff_time_avg, "$$$$$$$$$$$$ - 2")
+
             average_cutoff_time_lst[i] = cutoff_time_avg
             number_of_successful_resets_lst[i, :] = np.array(info["number_of_successful_resets"])
 

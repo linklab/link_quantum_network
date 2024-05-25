@@ -20,7 +20,7 @@ def test(env, q, num_episodes):
 
         while not done:
             episode_steps += 1
-            action = q.get_action(observation, epsilon=0.0)
+            action = q.get_action(observation, epsilon=0.01)
 
             next_observation, reward, terminated, truncated, _ = env.step(action)
 
