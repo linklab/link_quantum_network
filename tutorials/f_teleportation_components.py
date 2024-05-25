@@ -1,6 +1,6 @@
 from netsquid import pydynaa
 import netsquid as ns
-from netsquid.components import QuantumMemory, Port, DepolarNoiseModel, QuantumChannel
+from netsquid.components import QuantumMemory, Port, DepolarNoiseModel, QuantumChannel, FibreDelayModel
 
 
 class Alice(pydynaa.Entity):

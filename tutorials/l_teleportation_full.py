@@ -325,8 +325,7 @@ def run_experiment(num_runs, depolar_rates, distance=4e-3, dephase_rate=0.0):
         protocol_alice.start()
         protocol_bob.start()
         q_conn = network.get_connection(node_a, node_b, label="quantum")
-        cycle_runtime = (q_conn.subcomponents["qsource"].subcomponents["internal_clock"]
-                         .models["timing_model"].delay)
+        cycle_runtime = (q_conn.subcomponents["qsource"].subcomponents["internal_clock"].models["timing_model"].delay)
         ns.sim_run(cycle_runtime * num_runs + 1)
         df = dc.dataframe
         df['depolar_rate'] = depolar_rate
