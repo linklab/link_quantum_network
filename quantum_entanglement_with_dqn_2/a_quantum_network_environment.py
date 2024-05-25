@@ -49,7 +49,7 @@ class QuantumNetworkEnv(gym.Env):
         print("#" * 100)
 
         self.action_space = spaces.MultiDiscrete([2, 2, 2])  # actions: reset or wait for each link
-        self.observation_space = spaces.Box(low=0, high=self.max_steps, shape=(3, 2), dtype=np.float32)  # state: [entanglement status, age]
+        self.observation_space = spaces.Box(low=-1, high=1, shape=(3, 2), dtype=np.float32)  # state: [entanglement status, age]
 
         self.reset()
 
