@@ -305,7 +305,7 @@ def main():
         "episode_reward_avg_solved": 750,           # 훈련 종료를 위한 검증 에피소드 리워드의 Average
     }
 
-    use_wandb = True
+    use_wandb = False
     dqn = DQN(
         env=env, test_env=test_env, config=config, use_wandb=use_wandb
     )

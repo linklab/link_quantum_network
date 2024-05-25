@@ -81,7 +81,7 @@ class QuantumNetworkEnv(gym.Env):
     #             self.cutoff_time_list.append(self.state[link_num][1])
 
     def update_cutoff_time(self, link_num):
-        if self.state[0][0] == 1 and self.state[1][0] == 1 and self.state[link_num][1] != 0.0:
+        if self.state[link_num][0] == 1:
             self.cutoff_time_list.append(self.state[link_num][1])
 
     def reset(self):
@@ -141,6 +141,7 @@ class QuantumNetworkEnv(gym.Env):
         # check if done
         if self.time_step >= self.max_steps:
             self.terminated = True
+            print(self.cutoff_time_list, "!!!")
 
         self.truncated = False
         self.info = {
