@@ -6,7 +6,7 @@ import numpy as np
 class QuantumNetworkEnv(gym.Env):
     def __init__(
         self,
-        max_steps=1_000, fiber_length=100, light_v=200_000, attenuation_coefficient=0.2, lambda_decay=0.5, eta0=1.0
+        max_steps=1_000, fiber_length=100 / 2, light_v=200_000, attenuation_coefficient=0.2, lambda_decay=0.5, eta0=1.0
     ):
         """
         ----------
