@@ -63,7 +63,7 @@ class QuantumNetworkEnv(gym.Env):
         return eta_m
 
     def calculate_swap_success_probability(self, times: list):
-        time = min(times)
+        time = max(times)
         ps = self.memory_efficiency(time)
         return ps
 

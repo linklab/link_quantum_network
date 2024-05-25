@@ -3,7 +3,8 @@ from netsquid.examples.teleportation import ClassicalConnection
 from netsquid.nodes import Connection, Node
 
 from netsquid.components.qchannel import QuantumChannel
-from netsquid.qubits import StateSampler
+from netsquid.protocols import NodeProtocol
+from netsquid.qubits import StateSampler, ketstates
 from netsquid.components.qsource import QSource, SourceStatus
 from netsquid.components.models import FixedDelayModel, DepolarNoiseModel
 import netsquid.qubits.ketstates as ks
@@ -15,11 +16,11 @@ class EntanglingConnection(Connection):
     def __init__(self, length, source_frequency):
         super().__init__(name="EntanglingConnection")
         timing_model = FixedDelayModel(delay=(1e9 / source_frequency))
-        qsource = QSource(
+        self.qsource = QSource(
             name="qsource", state_sampler=StateSampler([ks.b00], [1.0]),
             num_ports=2, timing_model=None, status=SourceStatus.INTERNAL
         )
-        self.add_subcomponent(qsource)
+        self.add_subcomponent(self.qsource)
         qchannel_c2a = QuantumChannel(
             name="qchannel_C2A", length=length / 2, models={"delay_model": FibreDelayModel()}
         )
@@ -31,8 +32,8 @@ class EntanglingConnection(Connection):
         self.add_subcomponent(component=qchannel_c2b, forward_output=[("B", "recv")])
 
         # Connect qsource output to quantum channel input:
-        qsource.ports["qout0"].connect(qchannel_c2a.ports["send"])
-        qsource.ports["qout1"].connect(qchannel_c2b.ports["send"])
+        self.qsource.ports["qout0"].connect(qchannel_c2a.ports["send"])
+        self.qsource.ports["qout1"].connect(qchannel_c2b.ports["send"])
 
 
 def example_network_setup(node_distance=4e-3, depolar_rate=1e7):
@@ -62,20 +63,37 @@ def example_network_setup(node_distance=4e-3, depolar_rate=1e7):
     q_conn = EntanglingConnection(length=node_distance, source_frequency=2e7)
     alice.ports['qin_charlie'].connect(q_conn.ports['A'])
     bob.ports['qin_charlie'].connect(q_conn.ports['B'])
-    return alice, bob, q_conn, c_conn
+    return alice, bob, q_conn.qsource, q_conn, c_conn
+
+
+class EntanglementGenerationProtocol(NodeProtocol):
+    def __init__(self, source, node, partner):
+        super().__init__(node)
+        self.source = source
+        self.partner = partner
+
+    def run(self):
+        yield self.await_port_input(self.node.ports["qout0"])
+        yield self.await_port_input(self.partner.ports["qout1"])
+
+        q1 = self.node.ports["qout0"].rx_input().items[0]
+        q2 = self.partner.ports["qout1"].rx_input().items[0]
+        self.node.qmemory.put(q1, positions=0)
+        self.partner.qmemory.put(q2, positions=0)
+
+        fidelity = ns.qubits.fidelity([self.node.qmemory.peek(0), self.partner.qmemory.peek(0)], ketstates.b00)
+        success = fidelity > 0.9  # Threshold for considering successful entanglement
+        print(f"Entangled fidelity (after 5 ns wait) = {fidelity:.3f}: SUCESS: {success}")
 
 
 def main():
     ns.set_qstate_formalism(ns.QFormalism.DM)
-    alice, bob, *_ = example_network_setup()
+    alice, bob, source, q_conn, c_conn = example_network_setup()
 
+    protocol = EntanglementGenerationProtocol(source, alice, bob)
+    protocol.start()
     stats = ns.sim_run(15)
     print(stats)
-
-    qA, = alice.qmemory.peek(positions=[1])
-    qB, = bob.qmemory.peek(positions=[0])
-    fidelity = ns.qubits.fidelity([qA, qB], ns.b00)
-    print(f"Entangled fidelity (after 5 ns wait) = {fidelity:.3f}")
 
 
 if __name__ == "__main__":
