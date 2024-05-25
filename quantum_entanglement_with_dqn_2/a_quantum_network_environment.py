@@ -141,7 +141,6 @@ class QuantumNetworkEnv(gym.Env):
         # check if done
         if self.time_step >= self.max_steps:
             self.terminated = True
-            print(self.cutoff_time_list, "!!!")
 
         self.truncated = False
         self.info = {
