@@ -74,15 +74,14 @@ class QuantumNetworkEnv(gym.Env):
             self.state = np.array([[0, -1], [0, -1], [0, -1]], dtype=np.float32)
         self.is_both_elementary_links_entangled = False
 
-    # def update_cutoff_time(self, link_num):
-    #     if self.is_both_elementary_links_entangled is True:  # both links entangled
-    #         assert self.state[link_num][1] >= 0.0, self.state
-    #         if link_num == np.argmax([self.state[0][1], self.state[1][1]]):
-    #             self.cutoff_time_list.append(self.state[link_num][1])
-
     def update_cutoff_time(self, link_num):
-        if self.state[link_num][0] == 1:
+        if self.is_both_elementary_links_entangled:  # both links entangled
+            # if link_num == np.argmax([self.state[0][1], self.state[1][1]]):
             self.cutoff_time_list.append(self.state[link_num][1])
+
+    # def update_cutoff_time(self, link_num):
+    #     if self.state[link_num][0] == 1:
+    #         self.cutoff_time_list.append(self.state[link_num][1])
 
     def reset(self):
         self.initialize_state()
@@ -115,10 +114,10 @@ class QuantumNetworkEnv(gym.Env):
                     assert self.state[i][1] != -1
                     self.state[i][1] += self.slot_duration  # increase age if entangled
 
-        # if self.state[0][0] == 1 and self.state[1][0] == 1:  # both links entangled
-        #     self.is_both_elementary_links_entangled = True
-        # else:
-        #     self.is_both_elementary_links_entangled = False
+        if self.state[0][0] == 1 and self.state[1][0] == 1:  # both links entangled
+            self.is_both_elementary_links_entangled = True
+        else:
+            self.is_both_elementary_links_entangled = False
 
         if action[2] == 0:  # attempt swap set or reset
             if self.state[0][0] == 1 and self.state[1][0] == 1:  # both links entangled
