@@ -107,5 +107,5 @@ if __name__ == "__main__":
     qA, = alice.qmemory.peek(positions=[1])
     qB, = bob.qmemory.peek(positions=[0])
     print(qA, qB)
-    # fidelity = ns.qubits.fidelity([qA, qB], ns.b00)
-    # print(f"Entangled fidelity (after 5 ns wait) = {fidelity:.3f}")
+    fidelity = ns.qubits.fidelity([qA, qB], ns.b00)
+    print(f"Entangled fidelity (after 5 ns wait) = {fidelity:.3f}")
