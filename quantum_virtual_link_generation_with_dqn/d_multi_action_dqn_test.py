@@ -3,7 +3,7 @@ import torch
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
-from quantum_entanglement_with_dqn_2.a_quantum_network_environment import QuantumNetworkEnv
+from quantum_virtual_link_generation_with_dqn.a_quantum_network_environment import QuantumNetworkEnv
 from b_multi_action_qnet import QNet, MODEL_DIR
 
 

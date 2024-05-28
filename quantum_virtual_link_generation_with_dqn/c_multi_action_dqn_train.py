@@ -1,7 +1,7 @@
 import time
 import os
 
-from quantum_entanglement_with_dqn_2.a_quantum_network_environment import QuantumNetworkEnv
+from quantum_virtual_link_generation_with_dqn.a_quantum_network_environment import QuantumNetworkEnv
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
@@ -81,6 +81,7 @@ class DQN:
         validation_episode_reward_avg = 0.0
         validation_cutoff_time_avg = 0.0
         validation_number_of_successful_resets_avg_lst = [0.0, 0.0, 0.0]
+        validation_fidelities_avg_lst = [0.0, 0.0]
 
         is_terminated = False
         info = None
@@ -121,6 +122,10 @@ class DQN:
                 cutoff_time_avg = 0
             else:
                 cutoff_time_avg = np.average(info["cutoff_time_list"])
+            if info["fidelities"] == []:
+                fidelities = [0, 0]
+            else:
+                fidelities = np.average(info["fidelities"], axis=0)
 
             if n_episode % self.print_episode_interval == 0:
                 print(
@@ -132,15 +137,17 @@ class DQN:
                     "Training Steps: {:5,},".format(self.training_time_steps),
                     "Elapsed Time: {}".format(total_training_time),
                     "Number of Successful Resets: " + " | ".join('{:5,}'.format(k) for k in number_of_successful_resets_list) + ", ",
-                    "Mean Cutoff-Time: {:.6f}".format(cutoff_time_avg)
+                    "Mean Cutoff-Time: {:.6f}".format(cutoff_time_avg),
+                    "Fidelities: " + " | ".join('{:5,}'.format(k) for k in fidelities) + ", ",
                 )
 
             if n_episode % self.train_num_episodes_before_next_validation == 0:
-                validation_episode_reward_lst, validation_episode_reward_avg, validation_cutoff_time_avg, validation_number_of_successful_resets_avg_lst = self.validate()
+                validation_episode_reward_lst, validation_episode_reward_avg, validation_cutoff_time_avg, validation_number_of_successful_resets_avg_lst, validation_fidelities_avg_lst = self.validate()
 
                 print("[Validation] Episode Reward: {0}, Average Episode Reward: {1:.3f},".format(validation_episode_reward_lst, validation_episode_reward_avg),
                       "Average Number of Successful Resets: " + " | ".join('{:5.2f}'.format(k) for k in validation_number_of_successful_resets_avg_lst) + ", ",
-                      "Average Cutoff-time: {:.6f},".format(validation_cutoff_time_avg)
+                      "Average Cutoff-time: {:.6f},".format(validation_cutoff_time_avg),
+                      "Average Fidelities: " + " | ".join('{:5.2f}'.format(k) for k in validation_fidelities_avg_lst) + ", ",
                 )
 
                 if validation_episode_reward_avg > self.episode_reward_avg_solved:
@@ -157,6 +164,8 @@ class DQN:
                     "[VALIDATION] Mean e-link-1's Number of Successful Reset ({0} Episodes)".format(self.validation_num_episodes): validation_number_of_successful_resets_avg_lst[0],
                     "[VALIDATION] Mean e-link-2's Number of Successful Reset ({0} Episodes)".format(self.validation_num_episodes): validation_number_of_successful_resets_avg_lst[1],
                     "[VALIDATION] Mean v-link's Number of Successful Reset ({0} Episodes)".format(self.validation_num_episodes): validation_number_of_successful_resets_avg_lst[2],
+                    "[VALIDATION] Mean e-link-1's Fidelity ({0} Episodes)".format(self.validation_num_episodes): validation_fidelities_avg_lst[0],
+                    "[VALIDATION] Mean e-link-2's Fidelity ({0} Episodes)".format(self.validation_num_episodes): validation_fidelities_avg_lst[1],
                     "[TRAIN] Episode Reward": episode_reward,
                     "[TRAIN] Loss": loss if loss != 0.0 else 0.0,
                     "[TRAIN] Epsilon": epsilon,
@@ -165,6 +174,8 @@ class DQN:
                     "[TRAIN] Mean e-link-1's Number of Successful Reset": number_of_successful_resets_list[0],
                     "[TRAIN] Mean e-link-2's Number of Successful Reset": number_of_successful_resets_list[1],
                     "[TRAIN] Mean v-link's Number of Successful Reset": number_of_successful_resets_list[2],
+                    "[TRAIN] Mean e-link-1's Fidelity": fidelities[0],
+                    "[TRAIN] Mean e-link-2's Fidelity": fidelities[1],
                     "Training Episode": n_episode,
                     "Training Steps": self.training_time_steps
                 })
@@ -213,18 +224,6 @@ class DQN:
         # loss is just scalar torch value
         loss = F.mse_loss(targets.detach(), q_values)
 
-        # print("observations.shape: {0}, actions.shape: {1}, "
-        #       "next_observations.shape: {2}, rewards.shape: {3}, dones.shape: {4}".format(
-        #     observations.shape, actions.shape,
-        #     next_observations.shape, rewards.shape, dones.shape
-        # ))
-        # print("state_action_values.shape: {0}".format(state_action_values.shape))
-        # print("next_state_values.shape: {0}".format(next_state_values.shape))
-        # print("target_state_action_values.shape: {0}".format(
-        #     target_state_action_values.shape
-        # ))
-        # print("loss.shape: {0}".format(loss.shape))
-
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -250,6 +249,7 @@ class DQN:
         episode_reward_lst = np.zeros(shape=(self.validation_num_episodes,), dtype=float)
         average_cutoff_time_lst = np.zeros(shape=(self.validation_num_episodes,), dtype=float)
         number_of_successful_resets_lst = np.zeros(shape=(self.validation_num_episodes, 3), dtype=float)
+        fidelities_lst = np.zeros(shape=(self.validation_num_episodes, 2), dtype=float)
         info = None
         for i in range(self.validation_num_episodes):
             episode_reward = 0
@@ -271,19 +271,24 @@ class DQN:
 
             if info["cutoff_time_list"] == []:
                 cutoff_time_avg = 0.0
-                # print(info["cutoff_time_list"], cutoff_time_avg, "$$$$$$$$$$$$ - 1")
             else:
                 cutoff_time_avg = np.average(info["cutoff_time_list"])
-                # print(info["cutoff_time_list"], cutoff_time_avg, "$$$$$$$$$$$$ - 2")
+
+            if info["fidelities"] == []:
+                fidelities_avg = [0.0, 0.0]
+            else:
+                fidelities_avg = np.average(info["fidelities"], axis=0)
 
             average_cutoff_time_lst[i] = cutoff_time_avg
             number_of_successful_resets_lst[i, :] = np.array(info["number_of_successful_resets"])
+            fidelities_lst[i, :] = fidelities_avg
 
         return (
             episode_reward_lst,
             np.average(episode_reward_lst),
             np.average(average_cutoff_time_lst),
-            np.average(number_of_successful_resets_lst, axis=0)
+            np.average(number_of_successful_resets_lst, axis=0),
+            np.average(fidelities_lst, axis=0)
         )
 
 
@@ -293,7 +298,7 @@ def main():
 
     config = {
         "env_name": env.env_name,                   # 환경의 이름
-        "max_num_episodes": 10_000,                 # 훈련을 위한 최대 에피소드 횟수
+        "max_num_episodes": 30_000,                 # 훈련을 위한 최대 에피소드 횟수
         "batch_size": 256,                          # 훈련시 배치에서 한번에 가져오는 랜덤 배치 사이즈
         "learning_rate": 0.0001,                    # 학습율
         "gamma": 0.99,                              # 감가율

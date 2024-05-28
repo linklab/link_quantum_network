@@ -36,11 +36,11 @@ def example_network_setup(length=5):
     node_b = Node("node_B")
     node_c = Node("node_C", port_names=['qin_bc'])
 
-    depolar_noise = DepolarNoiseModel(depolar_rate=0.5)
+    depolar_noise = DepolarNoiseModel(depolar_rate=100)
     qmemory_a = QuantumMemory("memory_A", num_positions=1, memory_noise_models=[depolar_noise])
-    depolar_noise = DepolarNoiseModel(depolar_rate=0.5)
+    depolar_noise = DepolarNoiseModel(depolar_rate=100)
     qmemory_b = QuantumMemory("memory_B", num_positions=2, memory_noise_models=[depolar_noise]*2)
-    depolar_noise = DepolarNoiseModel(depolar_rate=0.5)
+    depolar_noise = DepolarNoiseModel(depolar_rate=100)
     qmemory_c = QuantumMemory("memory_C", num_positions=1, memory_noise_models=[depolar_noise])
 
     node_a.add_subcomponent(qmemory_a, name="memoryA")
@@ -71,42 +71,43 @@ def example_network_setup(length=5):
 
 if __name__ == "__main__":
     ns.set_qstate_formalism(ns.QFormalism.DM)
-    node_a, node_b, node_c, qchannel_ab, qchannel_bc = example_network_setup(length=0.1)
+    node_a, node_b, node_c, qchannel_ab, qchannel_bc = example_network_setup(length=0.01)
     protocol_ab = EntanglementProtocol(node_b, qchannel_ab, position=0)
     protocol_bc = EntanglementProtocol(node_b, qchannel_bc, position=1)
     protocol_swap = BellMeasurementProtocol(node_b)
 
-    protocol_ab.start()
-    protocol_bc.start()
-    ns.sim_run(duration=1e9 / 10000 * 5 * 100)
+    for i in range(3):
+        protocol_ab.reset()
+        protocol_bc.reset()
+        ns.sim_run(duration=1e9 / 100000 * 25 * 50)
 
-    q0, = node_a.qmemory.peek(positions=[0])
-    q1, = node_b.qmemory.peek(positions=[0])
-    q2, = node_b.qmemory.peek(positions=[1])
-    q3, = node_c.qmemory.peek(positions=[0])
+        q0, = node_a.qmemory.peek(positions=[0])
+        q1, = node_b.qmemory.peek(positions=[0])
+        q2, = node_b.qmemory.peek(positions=[1])
+        q3, = node_c.qmemory.peek(positions=[0])
 
-    print(q0)
-    print(q1)
-    print(q2)
-    print(q3)
+        print(q0)
+        print(q1)
+        print(q2)
+        print(q3)
 
-    print("q0.qstate == q1.qstate: ", q0.qstate == q1.qstate)
-    print("q2.qstate == q3.qstate: ", q2.qstate == q3.qstate)
-    print("q0.qstate == q2.qstate: ", q0.qstate == q2.qstate)
-    print("q0.qstate == q3.qstate: ", q0.qstate == q3.qstate)
-    print("q1.qstate == q3.qstate: ", q1.qstate == q3.qstate)
+        print("q0.qstate == q1.qstate: ", q0.qstate == q1.qstate)
+        print("q2.qstate == q3.qstate: ", q2.qstate == q3.qstate)
+        print("q0.qstate == q2.qstate: ", q0.qstate == q2.qstate)
+        print("q0.qstate == q3.qstate: ", q0.qstate == q3.qstate)
+        print("q1.qstate == q3.qstate: ", q1.qstate == q3.qstate)
 
-    if q0 is not None and q1 is not None:
-        print("Entanglement generation success (A-B)", end=" ")
-        print("Fidelity: {}".format(ns.qubits.fidelity([q0, q1], ks.b00)))
-    else:
-        print("Entanglement generation fail (A-B)")
+        if q0 is not None and q1 is not None:
+            print("Entanglement generation success (A-B)", end=" ")
+            print("Fidelity: {}".format(ns.qubits.fidelity([q0, q1], ks.b00)))
+        else:
+            print("Entanglement generation fail (A-B)")
 
-    if q2 is not None and q3 is not None:
-        print("Entanglement generation success (B-C)", end=" ")
-        print("Fidelity: {}".format(ns.qubits.fidelity([q2, q3], ks.b00)))
-    else:
-        print("Entanglement generation fail (B-C)")
+        if q2 is not None and q3 is not None:
+            print("Entanglement generation success (B-C)", end=" ")
+            print("Fidelity: {}".format(ns.qubits.fidelity([q2, q3], ks.b00)))
+        else:
+            print("Entanglement generation fail (B-C)")
 
     # protocol_swap.start()
     # ns.sim_run(duration=1000)

@@ -14,7 +14,6 @@ class EntanglementProtocol(Protocol):
         qubit_0, qubit_1 = ns.qubits.create_qubits(2)
         ns.qubits.operate(qubit_0, ns.H)
         ns.qubits.operate([qubit_0, qubit_1], ns.CNOT)
-
         self.node.qmemory.put([qubit_0], positions=[self.position])
         self.channel.send(qubit_1)
 
