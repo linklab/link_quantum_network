@@ -39,7 +39,6 @@ class QuantumNetworkEnv(gym.Env):
         # Slot Duration
         self.slot_duration = self.fiber_length / self.light_v    # time step 단위
 
-
         print("#" * 100)
         print(f"max_step: {self.max_steps:,}\t\t\t\t\tfiber_length: {self.fiber_length:,}km\t\tligt_v: {light_v:,}km/s")
         print(f"attenuation_coefficient: {self.attenuation_coefficient:.4f}\tlambda_decay: {self.lambda_decay}")
