@@ -125,7 +125,7 @@ class QuantumNetworkEnv(gym.Env):
         effective_spin_coherence_time = 0.01   # 10 ms
         eta_m = self.initial_efficiency * np.exp(
             -2 * np.power(
-                (time * 1e-9) / effective_spin_coherence_time,  # formed to sec
+                time / effective_spin_coherence_time,  # sec
                 self.mims_factor
             )
         )
@@ -167,7 +167,6 @@ class QuantumNetworkEnv(gym.Env):
     def step(self, action):
         self.time_step += 1
         reward = 0
-        slot_duration = self.slot_duration * 1e9   # formed to nanosec
 
         for i in range(2):  # for each elementary link
             if action[i] == 0:  # set or reset
@@ -187,9 +186,9 @@ class QuantumNetworkEnv(gym.Env):
             else:  # wait
                 if self.state[i][0] == 1:
                     assert self.state[i][1] != -1
-                    self.state[i][1] += slot_duration  # increase age if entangled
+                    self.state[i][1] += self.slot_duration  # increase age if entangled (sec)
 
-        ns.sim_run(duration=slot_duration)  # nanosec
+        ns.sim_run(duration=self.slot_duration * 1e9)  # nanosec
 
         if self.state[0][0] == 1 and self.state[1][0] == 1:  # both links entangled
             self.is_both_elementary_links_entangled = True
@@ -222,7 +221,7 @@ class QuantumNetworkEnv(gym.Env):
         else:
             if self.state[2][0] == 1:   # virtual link entangled
                 assert self.state[2][1] != -1
-                self.state[2][1] += slot_duration     # increase age
+                self.state[2][1] += self.slot_duration     # increase age (sec)
 
         # check if done
         if self.time_step >= self.max_steps:
