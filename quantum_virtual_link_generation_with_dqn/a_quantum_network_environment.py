@@ -162,6 +162,8 @@ class QuantumNetworkEnv(gym.Env):
         self.fidelities = []
         self.is_both_elementary_links_entangled = False
         self.number_of_successful_resets = [0, 0, 0]
+        # reset simulation
+        ns.sim_reset()
         return self.state.flatten(), self.info
 
     def step(self, action):
