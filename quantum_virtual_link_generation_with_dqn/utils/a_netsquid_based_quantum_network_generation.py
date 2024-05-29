@@ -13,10 +13,10 @@ class QuantumNetwork(object):
             node_config = {
                 "names": ["node_A", "node_B", "node_C"],
                 "port_names": [["qin_ba", ], None, ["qin_bc", ]],
-                "port_forwardings": {"qin_ba": "qin0", None:None, "qin_bc": "qin0"},
+                "port_forwardings": {"qin_ba": "qin0", None: None, "qin_bc": "qin0"},
                 "quantum_memory_names": ["memory_A", "memory_B", "memory_C"],
                 "quantum_memory_positions": [1, 2, 1],
-                "depolar_rates": [1e2, 1e2, 1e2]
+                "depolar_rates": [500, 500, 500]
             }
 
         if quantum_channel_config is None:
@@ -24,7 +24,7 @@ class QuantumNetwork(object):
                 "names": ["qchannel_ba", "qchannel_bc"],
                 "connecting_node_names": ["node_A", "node_C"],
                 "connecting_port_of_node_names": ["qin_ba", "qin_bc"],
-                "fiber_lengths": [50, 50],
+                "fiber_lengths": [50, 50],  # km
                 "specify_models": [
                     {"quantum_loss_model": FibreLossModel(p_loss_init=0.2, p_loss_length=0.25)},
                     {"quantum_loss_model": FibreLossModel(p_loss_init=0.2, p_loss_length=0.25)}

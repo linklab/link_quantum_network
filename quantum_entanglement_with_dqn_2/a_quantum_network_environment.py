@@ -53,12 +53,16 @@ class QuantumNetworkEnv(gym.Env):
         self.reset()
 
     def calculate_entangle_success_probability(self):
-        pe = self.initial_efficiency * np.exp(-self.attenuation_coefficient * self.fiber_length)
+        # pe = self.initial_efficiency * np.exp(-self.attenuation_coefficient * self.fiber_length)
+        pe = 1 - (1 - 0.01) * np.power(10, - self.fiber_length * 0.1 / 10)
         return pe
 
     def memory_efficiency(self, time):
         # Memory efficiency eta_m for Mims model
-        eta_m = self.eta0 * np.exp(-self.lambda_decay * time)
+        # eta_m = self.eta0 * np.exp(-self.lambda_decay * time)
+        # eta_m = np.exp(-0.01 * 5)
+        # eta_m = np.exp(-np.power(0.00025*100*1e9/1, 2))
+        eta_m = np.exp(- np.power(0.03/0.05, 2))
         return eta_m
 
     def calculate_swap_success_probability(self, times: list):
@@ -101,7 +105,7 @@ class QuantumNetworkEnv(gym.Env):
             if action[i] == 0:  # set or reset
                 self.update_cutoff_time(i)
                 success_prob = self.calculate_entangle_success_probability()
-                # print(f"{i}:", f"{success_prob = }")
+                print(f"{i}:", f"{success_prob = }")
                 if np.random.rand() < success_prob:
                     self.state[i] = [1, 0]   # successful entanglement
                     self.state[2] = [0, -1]  # reset virtual link
@@ -124,6 +128,7 @@ class QuantumNetworkEnv(gym.Env):
                 swap_success_prob = self.calculate_swap_success_probability(
                     [self.state[0][1], self.state[1][1]]
                 )
+                print(f"{swap_success_prob = }")
                 # print(f"{swap_success_prob = }", " | link_1's age:", f"{self.state[0][1]}", " | link_2's age:", f"{self.state[1][1]}")
                 if np.random.rand() < swap_success_prob:
                     self.initialize_state(virtual_link_success=True)  # consume entanglements of elementary links

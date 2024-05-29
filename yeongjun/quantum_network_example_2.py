@@ -36,11 +36,11 @@ def example_network_setup(length=5):
     node_b = Node("node_B")
     node_c = Node("node_C", port_names=['qin_bc'])
 
-    depolar_noise = DepolarNoiseModel(depolar_rate=100)
+    depolar_noise = DepolarNoiseModel(depolar_rate=500)
     qmemory_a = QuantumMemory("memory_A", num_positions=1, memory_noise_models=[depolar_noise])
-    depolar_noise = DepolarNoiseModel(depolar_rate=100)
+    depolar_noise = DepolarNoiseModel(depolar_rate=500)
     qmemory_b = QuantumMemory("memory_B", num_positions=2, memory_noise_models=[depolar_noise]*2)
-    depolar_noise = DepolarNoiseModel(depolar_rate=100)
+    depolar_noise = DepolarNoiseModel(depolar_rate=500)
     qmemory_c = QuantumMemory("memory_C", num_positions=1, memory_noise_models=[depolar_noise])
 
     node_a.add_subcomponent(qmemory_a, name="memoryA")
@@ -51,14 +51,14 @@ def example_network_setup(length=5):
         name="qchannel_ab",
         length=length,
         models={
-            "quantum_loss_model": FibreLossModel(p_loss_init=0.0, p_loss_length=0.2)
+            "quantum_loss_model": FibreLossModel(p_loss_init=0.2, p_loss_length=0.25)
         }
     )
     qchannel_bc = QuantumChannel(
         name="qchannel_bc",
         length=length,
         models={
-            "quantum_loss_model": FibreLossModel(p_loss_init=0.0, p_loss_length=0.2)
+            "quantum_loss_model": FibreLossModel(p_loss_init=0.2, p_loss_length=0.25)
         }
     )
     qchannel_ab.ports['recv'].connect(node_a.ports['qin_ab'])
@@ -71,7 +71,7 @@ def example_network_setup(length=5):
 
 if __name__ == "__main__":
     ns.set_qstate_formalism(ns.QFormalism.DM)
-    node_a, node_b, node_c, qchannel_ab, qchannel_bc = example_network_setup(length=0.01)
+    node_a, node_b, node_c, qchannel_ab, qchannel_bc = example_network_setup(length=1)
     protocol_ab = EntanglementProtocol(node_b, qchannel_ab, position=0)
     protocol_bc = EntanglementProtocol(node_b, qchannel_bc, position=1)
     protocol_swap = BellMeasurementProtocol(node_b)

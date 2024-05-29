@@ -11,7 +11,7 @@ from quantum_virtual_link_generation_with_dqn.utils.b_netsquid_based_protocols i
 class QuantumNetworkEnv(gym.Env):
     def __init__(
         self,
-        max_steps=1_000, light_v=200_000, lambda_decay=0.5, eta0=1.0
+        max_steps=1_000, light_v=200_000, initial_efficiency=1.0, mims_factor=2.0
     ):
         """
         ----------
@@ -20,8 +20,8 @@ class QuantumNetworkEnv(gym.Env):
         env_name
         max_steps: maximum simulation steps
         light_v (km/s): light propagation speed in the fiber, km/s
-        lambda_decay: memory decay coefficient
-        eta0: initial memory efficiency (Paper: a zero-time efficiency of 1.)
+        initial_efficiency: initial memory efficiency (Paper: a zero-time efficiency of 1.)
+        mims_factor: memory decay coefficient
         ------------------------------------------------------------------------------
         """
         super(QuantumNetworkEnv, self).__init__()
@@ -31,16 +31,14 @@ class QuantumNetworkEnv(gym.Env):
 
         self.light_v = light_v
 
-        # For prob_e
-        self.initial_efficiency = 1.0
-
         # For prob_s
-        self.lambda_decay = lambda_decay
-        self.eta0 = eta0
+        self.initial_efficiency = initial_efficiency
+        self.mims_factor = mims_factor
 
         print("#" * 100)
         print(f"max_step: {self.max_steps:,}\t\t\tligt_v: {light_v:,}km/s")
-        print(f"lambda_decay: {self.lambda_decay}")
+        print(f"initial_efficiency: {self.initial_efficiency}")
+        print(f"mims_factor: {self.mims_factor}")
         print(f"prob_s: {self.calculate_swap_success_probability([0.0, 0.0]):.2f} (attenuation)")
 
         # generate network & set protocols
@@ -49,9 +47,10 @@ class QuantumNetworkEnv(gym.Env):
         self.fiber_lengths = self.network.quantum_channel_config["fiber_lengths"]
         print(f"fiber_length_1: {self.fiber_lengths[0]}km,\t\tfiber_length_2: {self.fiber_lengths[1]}km")
         # Slot Duration
-        self.slot_durations = [l / self.light_v for l in self.fiber_lengths]  # time step 단위
-        print(f"slot_duration_1: {self.slot_durations[0]}s,\t\tslot_duration_2: {self.slot_durations[1]}s")
+        self.slot_duration = max([l / self.light_v for l in self.fiber_lengths])  # time step 단위
+        print(f"slot_duration: {self.slot_duration}s")
         print("#" * 100)
+        print()
 
         # define action space & observation space
         self.action_space = spaces.MultiDiscrete([2, 2, 2])  # actions: reset or wait for each link
@@ -62,10 +61,8 @@ class QuantumNetworkEnv(gym.Env):
     def generate_network(self):
         ns.set_qstate_formalism(ns.QFormalism.DM)
         network = QuantumNetwork()
-        print("#" * 100)
         print(f"nodes: {network.node_lst}")
         print(f"quantum channels: {network.qchannel_lst}")
-        print("#" * 100)
         return network
 
     def set_protocols(self):
@@ -112,9 +109,12 @@ class QuantumNetworkEnv(gym.Env):
         return is_entangled
 
     def get_fidelities(self):
+        # node A
         q0, = self.node_lst[0].qmemory.peek(positions=[0])
+        # node B
         q1, = self.node_lst[1].qmemory.peek(positions=[0])
         q2, = self.node_lst[1].qmemory.peek(positions=[1])
+        # node C
         q3, = self.node_lst[2].qmemory.peek(positions=[0])
         link_1_fidelity = ns.qubits.fidelity([q0, q1], ks.b00)
         link_2_fidelity = ns.qubits.fidelity([q2, q3], ks.b00)
@@ -122,7 +122,13 @@ class QuantumNetworkEnv(gym.Env):
 
     def memory_efficiency(self, time):
         # Memory efficiency eta_m for Mims model
-        eta_m = self.eta0 * np.exp(-self.lambda_decay * time)
+        effective_spin_coherence_time = 0.01   # 10 ms
+        eta_m = self.initial_efficiency * np.exp(
+            -2 * np.power(
+                (time * 1e-9) / effective_spin_coherence_time,  # formed to sec
+                self.mims_factor
+            )
+        )
         return eta_m
 
     def calculate_swap_success_probability(self, times: list):
@@ -161,7 +167,7 @@ class QuantumNetworkEnv(gym.Env):
     def step(self, action):
         self.time_step += 1
         reward = 0
-        slot_duration = max(self.slot_durations)
+        slot_duration = self.slot_duration * 1e9   # formed to nanosec
 
         for i in range(2):  # for each elementary link
             if action[i] == 0:  # set or reset
@@ -181,9 +187,9 @@ class QuantumNetworkEnv(gym.Env):
             else:  # wait
                 if self.state[i][0] == 1:
                     assert self.state[i][1] != -1
-                    self.state[i][1] += self.slot_durations[i]  # increase age if entangled
+                    self.state[i][1] += slot_duration  # increase age if entangled
 
-        ns.sim_run(duration=slot_duration)
+        ns.sim_run(duration=slot_duration)  # nanosec
 
         if self.state[0][0] == 1 and self.state[1][0] == 1:  # both links entangled
             self.is_both_elementary_links_entangled = True
@@ -198,6 +204,10 @@ class QuantumNetworkEnv(gym.Env):
 
                 # check fidelities of elementary links
                 link_1_fidelity, link_2_fidelity = self.get_fidelities()
+                # print(f"{swap_success_prob = }")
+                # print(f"{link_1_fidelity = }")
+                # print(f"{link_2_fidelity = }")
+
                 if link_1_fidelity <= 0.501 or link_2_fidelity <= 0.501:
                     swap_success_prob = 0.0
 

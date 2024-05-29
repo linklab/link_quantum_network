@@ -147,7 +147,7 @@ class DQN:
                 print("[Validation] Episode Reward: {0}, Average Episode Reward: {1:.3f},".format(validation_episode_reward_lst, validation_episode_reward_avg),
                       "Average Number of Successful Resets: " + " | ".join('{:5.2f}'.format(k) for k in validation_number_of_successful_resets_avg_lst) + ", ",
                       "Average Cutoff-time: {:.6f},".format(validation_cutoff_time_avg),
-                      "Average Fidelities: " + " | ".join('{:5.2f}'.format(k) for k in validation_fidelities_avg_lst) + ", ",
+                      "Average Fidelities: " + " | ".join('{:.5f}'.format(k) for k in validation_fidelities_avg_lst) + ", ",
                 )
 
                 if validation_episode_reward_avg > self.episode_reward_avg_solved:
@@ -298,7 +298,7 @@ def main():
 
     config = {
         "env_name": env.env_name,                   # 환경의 이름
-        "max_num_episodes": 30_000,                 # 훈련을 위한 최대 에피소드 횟수
+        "max_num_episodes": 10_000,                 # 훈련을 위한 최대 에피소드 횟수
         "batch_size": 256,                          # 훈련시 배치에서 한번에 가져오는 랜덤 배치 사이즈
         "learning_rate": 0.0001,                    # 학습율
         "gamma": 0.99,                              # 감가율
