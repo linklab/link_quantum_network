@@ -38,9 +38,7 @@ def example_network_setup(length=5):
 
     depolar_noise = DepolarNoiseModel(depolar_rate=500)
     qmemory_a = QuantumMemory("memory_A", num_positions=1, memory_noise_models=[depolar_noise])
-    depolar_noise = DepolarNoiseModel(depolar_rate=500)
     qmemory_b = QuantumMemory("memory_B", num_positions=2, memory_noise_models=[depolar_noise]*2)
-    depolar_noise = DepolarNoiseModel(depolar_rate=500)
     qmemory_c = QuantumMemory("memory_C", num_positions=1, memory_noise_models=[depolar_noise])
 
     node_a.add_subcomponent(qmemory_a, name="memoryA")
@@ -48,7 +46,7 @@ def example_network_setup(length=5):
     node_c.add_subcomponent(qmemory_c, name="memoryC")
 
     qchannel_ab = QuantumChannel(
-        name="qchannel_ab",
+        name="qchannel_ba",
         length=length,
         models={
             "quantum_loss_model": FibreLossModel(p_loss_init=0.2, p_loss_length=0.25)

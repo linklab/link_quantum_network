@@ -22,5 +22,5 @@ class BellMeasurementProtocol(NodeProtocol):
     def run(self):
         qubit_0 = self.node.qmemory.peek(positions=[0])
         qubit_1 = self.node.qmemory.peek(positions=[1])
-        ns.qubits.operate(qubit_0[0], ns.H)
         ns.qubits.operate([qubit_0[0], qubit_1[0]], ns.CNOT)
+        ns.qubits.operate(qubit_0[0], ns.H)

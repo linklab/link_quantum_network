@@ -18,7 +18,8 @@ MODEL_DIR = os.path.join(PROJECT_HOME, "quantum_entanglement_with_dqn_2", "model
 if not os.path.exists(MODEL_DIR):
     os.mkdir(MODEL_DIR)
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = "cpu"
 
 
 class QNet(nn.Module):

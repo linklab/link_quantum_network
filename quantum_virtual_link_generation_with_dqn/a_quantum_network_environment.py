@@ -11,7 +11,7 @@ from quantum_virtual_link_generation_with_dqn.utils.b_netsquid_based_protocols i
 class QuantumNetworkEnv(gym.Env):
     def __init__(
         self,
-        max_steps=1_000, light_v=200_000, initial_efficiency=1.0, mims_factor=2.0
+        max_steps=5_000, light_v=200_000, initial_efficiency=1.0, mims_factor=2.0
     ):
         """
         ----------
