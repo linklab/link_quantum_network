@@ -1,11 +1,9 @@
-from collections import namedtuple
 import networkx as nx
 import matplotlib.pyplot as plt
 import gymnasium as gym
 import math
 import random
 import sys
-from datetime import datetime
 from pathlib import Path
 
 BASE_PATH = str(Path(__file__).resolve().parent.parent) 
@@ -76,14 +74,14 @@ class SimpleQuentumNetwork(nx.Graph):
         plt.show()
 
 class SimpleQuantumNetworkEnv(gym.Env):
-    optical_bsm_efficiency = 0.39
-    probability_photon_detection = 0.9
+    optical_bsm_efficiency = 0.5
+    probability_photon_detection = 0.2
     attenuation_length_of_the_optical_fiber = 22 # km
 
     probability_init_memory = 1.0
-    t_0 = 7.0
+    t_0 = 10.0
 
-    max_entanglement_age = 7
+    max_entanglement_age = 10
     running_average_window = 50
 
     def __init__(self, max_step):
@@ -91,11 +89,10 @@ class SimpleQuantumNetworkEnv(gym.Env):
         # x_k: {0, 1}, m_k: {-1, 0, ..., max_age}
         # x_k: 0 또는 1의 값을 가지는 이진 상태.
 	    # m_k: -1 (inactive) 또는 정수 값 (entanglement age).
-        self.max_age = 100  # 최대 entanglement age
         self.observation_space = gym.spaces.MultiDiscrete([
-            2, self.max_age + 2,  # (x_0, m_0)
-            2, self.max_age + 2,  # (x_1, m_1)
-            2, self.max_age + 2   # (x_2, m_2)
+            2, self.max_entanglement_age + 2,  # (x_0, m_0)
+            2, self.max_entanglement_age + 2,  # (x_1, m_1)
+            2, self.max_entanglement_age + 2   # (x_2, m_2)
         ])
 
         # 각 링크(e0, e1, v)에 대해 {reset(0), wait(1)}의 선택 가능

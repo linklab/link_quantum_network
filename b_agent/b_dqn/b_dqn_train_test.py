@@ -85,7 +85,7 @@ class EarlyStopping:
         if self.max_validation_episode_reward_avg is None:
             self.max_validation_episode_reward_avg = new_validation_episode_reward_avg
             message = f'Early stopping is stated!'
-        elif new_validation_episode_reward_avg > self.max_validation_episode_reward_avg - self.config["early_stop_delta"]:
+        elif new_validation_episode_reward_avg > self.max_validation_episode_reward_avg + self.config["early_stop_delta"]:
             message = f'V_loss decreased ({self.max_validation_episode_reward_avg:7.5f} --> {new_validation_episode_reward_avg:7.5f}). Saving model...'
             self.save_checkpoint(new_validation_episode_reward_avg, model)
             self.max_validation_episode_reward_avg = new_validation_episode_reward_avg
