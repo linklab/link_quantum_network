@@ -2,7 +2,7 @@ import torch
 import os, sys
 from pathlib import Path
 
-os.environ['WANDB_BASE_URL'] = 'http://localhost:8080'
+# os.environ['WANDB_BASE_URL'] = 'http://localhost:8080'
 
 BASE_PATH = str(Path(__file__).resolve().parent.parent.parent) 
 assert BASE_PATH.endswith("link_quantum_network"), BASE_PATH
