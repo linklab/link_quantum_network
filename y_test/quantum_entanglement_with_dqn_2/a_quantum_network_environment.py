@@ -39,7 +39,6 @@ class QuantumNetworkEnv(gym.Env):
         # Slot Duration
         self.slot_duration = self.fiber_length / self.light_v    # time step 단위
 
-
         print("#" * 100)
         print(f"max_step: {self.max_steps:,}\t\t\t\t\tfiber_length: {self.fiber_length:,}km\t\tligt_v: {light_v:,}km/s")
         print(f"attenuation_coefficient: {self.attenuation_coefficient:.4f}\tlambda_decay: {self.lambda_decay}")
@@ -54,12 +53,16 @@ class QuantumNetworkEnv(gym.Env):
         self.reset()
 
     def calculate_entangle_success_probability(self):
-        pe = self.initial_efficiency * np.exp(-self.attenuation_coefficient * self.fiber_length)
+        # pe = self.initial_efficiency * np.exp(-self.attenuation_coefficient * self.fiber_length)
+        pe = 1 - (1 - 0.01) * np.power(10, - self.fiber_length * 0.1 / 10)
         return pe
 
     def memory_efficiency(self, time):
         # Memory efficiency eta_m for Mims model
-        eta_m = self.eta0 * np.exp(-self.lambda_decay * time)
+        # eta_m = self.eta0 * np.exp(-self.lambda_decay * time)
+        # eta_m = np.exp(-0.01 * 5)
+        # eta_m = np.exp(-np.power(0.00025*100*1e9/1, 2))
+        eta_m = np.exp(- np.power(0.03/0.05, 2))
         return eta_m
 
     def calculate_swap_success_probability(self, times: list):
@@ -74,15 +77,14 @@ class QuantumNetworkEnv(gym.Env):
             self.state = np.array([[0, -1], [0, -1], [0, -1]], dtype=np.float32)
         self.is_both_elementary_links_entangled = False
 
-    # def update_cutoff_time(self, link_num):
-    #     if self.is_both_elementary_links_entangled is True:  # both links entangled
-    #         assert self.state[link_num][1] >= 0.0, self.state
-    #         if link_num == np.argmax([self.state[0][1], self.state[1][1]]):
-    #             self.cutoff_time_list.append(self.state[link_num][1])
-
     def update_cutoff_time(self, link_num):
-        if self.state[link_num][0] == 1:
+        if self.is_both_elementary_links_entangled:  # both links entangled
+            # if link_num == np.argmax([self.state[0][1], self.state[1][1]]):
             self.cutoff_time_list.append(self.state[link_num][1])
+
+    # def update_cutoff_time(self, link_num):
+    #     if self.state[link_num][0] == 1:
+    #         self.cutoff_time_list.append(self.state[link_num][1])
 
     def reset(self):
         self.initialize_state()
@@ -103,7 +105,7 @@ class QuantumNetworkEnv(gym.Env):
             if action[i] == 0:  # set or reset
                 self.update_cutoff_time(i)
                 success_prob = self.calculate_entangle_success_probability()
-                # print(f"{i}:", f"{success_prob = }")
+                print(f"{i}:", f"{success_prob = }")
                 if np.random.rand() < success_prob:
                     self.state[i] = [1, 0]   # successful entanglement
                     self.state[2] = [0, -1]  # reset virtual link
@@ -115,10 +117,10 @@ class QuantumNetworkEnv(gym.Env):
                     assert self.state[i][1] != -1
                     self.state[i][1] += self.slot_duration  # increase age if entangled
 
-        # if self.state[0][0] == 1 and self.state[1][0] == 1:  # both links entangled
-        #     self.is_both_elementary_links_entangled = True
-        # else:
-        #     self.is_both_elementary_links_entangled = False
+        if self.state[0][0] == 1 and self.state[1][0] == 1:  # both links entangled
+            self.is_both_elementary_links_entangled = True
+        else:
+            self.is_both_elementary_links_entangled = False
 
         if action[2] == 0:  # attempt swap set or reset
             if self.state[0][0] == 1 and self.state[1][0] == 1:  # both links entangled
@@ -126,6 +128,7 @@ class QuantumNetworkEnv(gym.Env):
                 swap_success_prob = self.calculate_swap_success_probability(
                     [self.state[0][1], self.state[1][1]]
                 )
+                print(f"{swap_success_prob = }")
                 # print(f"{swap_success_prob = }", " | link_1's age:", f"{self.state[0][1]}", " | link_2's age:", f"{self.state[1][1]}")
                 if np.random.rand() < swap_success_prob:
                     self.initialize_state(virtual_link_success=True)  # consume entanglements of elementary links
