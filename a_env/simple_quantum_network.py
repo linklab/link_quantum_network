@@ -18,7 +18,7 @@ from b_agent.a_dummy.dummy_agent import DummyAgent
 class Edge:
     def __init__(
             self, node0, node1, distance, entanglement=0, age=-1,
-            last_entanglement_try_timestep=-1, last_swap_try_timestep=-1
+            last_entanglement_try_timestep=-1, last_entanglement_timestep=-1,
     ):
         self.node0 = node0
         self.node1 = node1
@@ -26,16 +26,17 @@ class Edge:
         self.entanglement = entanglement
         self.age = age
         self.last_entanglement_try_timestep = last_entanglement_try_timestep
-        self.last_swap_try_timestep = last_swap_try_timestep
+        self.last_entanglement_timestep = last_entanglement_timestep
 
         self.age_list = []
         self.average_age = 0.0
+        self.entanglement_rate = 0.0
 
         self.cutoff_time_list = []
         self.average_cutoff_time = 0.0
 
 
-class SimpleQuentumNetwork(nx.Graph):
+class SimpleQuantumNetwork(nx.Graph):
     def __init__(self):
         super().__init__()
 
@@ -105,7 +106,7 @@ class SimpleQuantumNetworkEnv(gym.Env):
         self.current_observation = None
         self.current_step = None
 
-        self.quantum_network = SimpleQuentumNetwork()
+        self.quantum_network = SimpleQuantumNetwork()
         self.max_step = max_step
 
         self.probability_swap_list = []
@@ -123,7 +124,7 @@ class SimpleQuantumNetworkEnv(gym.Env):
         return observation
 
     def reset(self):
-        self.quantum_network = SimpleQuentumNetwork()
+        self.quantum_network = SimpleQuantumNetwork()
 
         # 현재 observation 초기화
         self.current_observation = self.get_observation()
@@ -136,6 +137,9 @@ class SimpleQuantumNetworkEnv(gym.Env):
             "e0_avg_age": self.quantum_network.edge_dict["e0"].average_age,
             "e1_avg_age": self.quantum_network.edge_dict["e1"].average_age,
             "v_avg_age": self.quantum_network.edge_dict["v"].average_age,
+            "e0_entanglement_rate": self.quantum_network.edge_dict["e0"].entanglement_rate,
+            "e1_entanglement_rate": self.quantum_network.edge_dict["e1"].entanglement_rate,
+            "v_entanglement_rate": self.quantum_network.edge_dict["v"].entanglement_rate,
             "e0_avg_cutoff_time": self.quantum_network.edge_dict["e0"].average_cutoff_time,
             "e1_avg_cutoff_time": self.quantum_network.edge_dict["e1"].average_cutoff_time,
             "v_avg_cutoff_time": self.quantum_network.edge_dict["v"].average_cutoff_time,
@@ -164,13 +168,15 @@ class SimpleQuantumNetworkEnv(gym.Env):
 
         elif e0_action == 1:
             self.try_entanglement(edge_idx="e0")
-            self.update_cutoff_tim(edge_idx="e0")
+            self.update_cutoff_time(edge_idx="e0")
             self.quantum_network.edge_dict["e0"].last_entanglement_try_timestep = self.current_step
 
         else:
             raise ValueError()
 
-        self.update_edge_age(edge_idx="e0")
+        self.quantum_network.edge_dict["e0"].age_list.append(
+            self.quantum_network.edge_dict["e0"].age
+        )
 
         ########################
         # e1 action processing #
@@ -185,13 +191,15 @@ class SimpleQuantumNetworkEnv(gym.Env):
 
         elif e1_action == 1:
             self.try_entanglement(edge_idx="e1")
-            self.update_cutoff_tim(edge_idx="e1")
+            self.update_cutoff_time(edge_idx="e1")
             self.quantum_network.edge_dict["e1"].last_entanglement_try_timestep = self.current_step
+
         else:
             raise ValueError()
 
-        self.update_edge_age(edge_idx="e1")
-
+        self.quantum_network.edge_dict["e1"].age_list.append(
+            self.quantum_network.edge_dict["e1"].age
+        )
         #######################
         # v action processing #
         #######################
@@ -208,14 +216,18 @@ class SimpleQuantumNetworkEnv(gym.Env):
 
         elif v_action == 1:
             reward = self.try_swap()
-            self.update_cutoff_tim(edge_idx="v")
+
+            self.update_cutoff_time(edge_idx="v")
             self.quantum_network.edge_dict["v"].last_entanglement_try_timestep = self.current_step
+
         else:
             raise ValueError()
 
-        self.update_edge_age(edge_idx="v")
+        self.quantum_network.edge_dict["v"].age_list.append(
+            self.quantum_network.edge_dict["v"].age
+        )
 
-        # average_probability_swap 업데이트
+        # average_probability_swap 갱신
         self.probability_swap_list.append(self.probability_swap())
         # self.average_probability_swap = self.running_mean(self.probability_swap_list, self.running_average_window)
         self.average_probability_swap = np.mean(self.probability_swap_list)
@@ -228,11 +240,32 @@ class SimpleQuantumNetworkEnv(gym.Env):
         if self.current_step == self.max_step:
             terminated = True
 
+            filtered_age_list = [x for x in self.quantum_network.edge_dict["e0"].age_list if x != -1]
+            self.quantum_network.edge_dict["e0"].average_age \
+                = sum(filtered_age_list) / len(filtered_age_list) if len(filtered_age_list) != 0 else 0.0
+            self.quantum_network.edge_dict["e0"].entanglement_rate \
+                = len(filtered_age_list) / self.current_step
+
+            filtered_age_list = [x for x in self.quantum_network.edge_dict["e1"].age_list if x != -1]
+            self.quantum_network.edge_dict["e1"].average_age \
+                = sum(filtered_age_list) / len(filtered_age_list) if len(filtered_age_list) != 0 else 0.0
+            self.quantum_network.edge_dict["e1"].entanglement_rate \
+                = len(filtered_age_list) / self.current_step
+
+            filtered_age_list = [x for x in self.quantum_network.edge_dict["v"].age_list if x != -1]
+            self.quantum_network.edge_dict["v"].average_age \
+                = sum(filtered_age_list) / len(filtered_age_list) if len(filtered_age_list) != 0 else 0.0
+            self.quantum_network.edge_dict["v"].entanglement_rate \
+                = len(filtered_age_list) / self.current_step
+
         info = {
             "avg_swap_prob": self.average_probability_swap,
             "e0_avg_age": self.quantum_network.edge_dict["e0"].average_age,
             "e1_avg_age": self.quantum_network.edge_dict["e1"].average_age,
             "v_avg_age": self.quantum_network.edge_dict["v"].average_age,
+            "e0_entanglement_rate": self.quantum_network.edge_dict["e0"].entanglement_rate,
+            "e1_entanglement_rate": self.quantum_network.edge_dict["e1"].entanglement_rate,
+            "v_entanglement_rate": self.quantum_network.edge_dict["v"].entanglement_rate,
             "e0_avg_cutoff_time": self.quantum_network.edge_dict["e0"].average_cutoff_time,
             "e1_avg_cutoff_time": self.quantum_network.edge_dict["e1"].average_cutoff_time,
             "v_avg_cutoff_time": self.quantum_network.edge_dict["v"].average_cutoff_time,
@@ -280,7 +313,7 @@ class SimpleQuantumNetworkEnv(gym.Env):
 
         return reward
 
-    def update_cutoff_tim(self, edge_idx):
+    def update_cutoff_time(self, edge_idx):
         # cutoff_time_list 에 새로운 값 추가
         if self.quantum_network.edge_dict[edge_idx].last_entanglement_try_timestep != -1:
             self.quantum_network.edge_dict[edge_idx].cutoff_time_list.append(
@@ -294,9 +327,9 @@ class SimpleQuantumNetworkEnv(gym.Env):
             )
 
     def update_edge_age(self, edge_idx):
-        if self.quantum_network.edge_dict[edge_idx].age != -1:
+        if self.quantum_network.edge_dict[edge_idx].last_entanglement_timestep != -1:
             self.quantum_network.edge_dict[edge_idx].age_list.append(
-                self.quantum_network.edge_dict[edge_idx].age + 1
+                self.current_step - self.quantum_network.edge_dict[edge_idx].last_entanglement_timestep
             )
             # self.quantum_network.edge_dict[edge_idx].average_age = self.running_mean(
             #     self.quantum_network.edge_dict[edge_idx].age_list, self.running_average_window
@@ -304,6 +337,18 @@ class SimpleQuantumNetworkEnv(gym.Env):
             self.quantum_network.edge_dict[edge_idx].average_age = np.mean(
                 self.quantum_network.edge_dict[edge_idx].age_list
             )
+
+    # def update_edge_age(self, edge_idx):
+    #     if self.quantum_network.edge_dict[edge_idx].age != -1:
+    #         self.quantum_network.edge_dict[edge_idx].age_list.append(
+    #             self.quantum_network.edge_dict[edge_idx].age + 1
+    #         )
+    #         # self.quantum_network.edge_dict[edge_idx].average_age = self.running_mean(
+    #         #     self.quantum_network.edge_dict[edge_idx].age_list, self.running_average_window
+    #         # )
+    #         self.quantum_network.edge_dict[edge_idx].average_age = np.mean(
+    #             self.quantum_network.edge_dict[edge_idx].age_list
+    #         )
 
     def aging_entanglement(self, edge_idx):
         self.quantum_network.edge_dict[edge_idx].age += 1
@@ -360,8 +405,8 @@ class SimpleQuantumNetworkEnv(gym.Env):
 
 
 def test_env():
-    # SimpleQuentumNetwork 객체 생성
-    simple_quantum_network = SimpleQuentumNetwork()
+    # SimpleQuantumNetwork 객체 생성
+    simple_quantum_network = SimpleQuantumNetwork()
     # simple_quantum_network.draw_graph()
 
     # SimpleQuantumNetworkEnv 객체 생성
@@ -399,15 +444,23 @@ def loop_test():
 
         print(
             "[Step: {0:>3}] Ob.: {1:<22} Act: {2} N.Ob.: {3:<22} "
-            "R.: {4} Term.: {5:<5} Trun.: {6:<5} Info: {7:<5.3f}".format(
+            "R.: {4} Term.: {5:<5}".format(
                 episode_step,
                 str(observation),
                 action,
                 str(next_observation),
                 reward,
                 str(terminated),
-                str(truncated),
-                info["avg_swap_prob"],
+            ),
+            end=" "
+        )
+        print(
+            "S.P.: {:5.3f}".format(info["avg_swap_prob"]),
+            "age: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
+                info["e0_avg_age"], info["e1_avg_age"], info["v_avg_age"]
+            ),
+            "cutoff_time: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
+                info["e0_avg_cutoff_time"], info["e1_avg_cutoff_time"], info["v_avg_cutoff_time"]
             )
         )
 
@@ -415,6 +468,6 @@ def loop_test():
 
 
 if __name__ == "__main__":
-    test_env()
-
+    # test_env()
+    loop_test()
 

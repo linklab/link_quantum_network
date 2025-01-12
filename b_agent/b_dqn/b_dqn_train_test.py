@@ -101,7 +101,7 @@ class EarlyStopping:
     def save_checkpoint(self, new_validation_episode_reward_avg, model):
         file_path = os.path.join(
             self.checkpoint_file_path,
-            f"{self.config['env_name']}_{new_validation_episode_reward_avg:6.2f}_checkpoint_{self.run_time_str}.pt"
+            f"{self.config['env_name']}_{self.run_time_str}_checkpoint_{new_validation_episode_reward_avg:5.2f}.pt"
         )
 
         '''Saves model when validation loss decrease.'''
@@ -219,8 +219,8 @@ class DqnTrainer:
                     "Epi. R.: {:>3.1f},".format(episode_reward),
                     "R. Buffer: {:>6,},".format(self.replay_buffer.size()),
                     "Loss: {:6.4f},".format(loss),
-                    "Epsilon: {:4.2f},".format(epsilon),
-                    "Training Steps: {:5,}".format(self.training_time_steps),
+                    "Eps.: {:4.2f},".format(epsilon),
+                    "Train Steps: {:5,}".format(self.training_time_steps),
                     "S.P.: {:5.3f}".format(info["avg_swap_prob"]),
                     "age: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
                         info["e0_avg_age"], info["e1_avg_age"], info["v_avg_age"]
@@ -240,13 +240,21 @@ class DqnTrainer:
                         "[TRAIN] Loss": loss if loss != 0.0 else 0.0,
                         "[TRAIN] Epsilon": epsilon,
                         "[TRAIN] Replay buffer": self.replay_buffer.size(),
-                        "[TRAIN] Swap Probability": info["avg_swap_prob"],
+
+                        "[TRAIN] Moving Avg. Swap Prob.": info["avg_swap_prob"],
+
                         "[TRAIN] E0 Average Age": info["e0_avg_age"],
                         "[TRAIN] E1 Average Age": info["e1_avg_age"],
                         "[TRAIN] V Average Age": info["v_avg_age"],
+
+                        "[TRAIN] E0 Entanglement Rate": info["e0_entanglement_rate"],
+                        "[TRAIN] E1 Entanglement Rate": info["e1_entanglement_rate"],
+                        "[TRAIN] V Entanglement Rate": info["v_entanglement_rate"],
+
                         "[TRAIN] E0 Cutoff Time": info["e0_avg_cutoff_time"],
                         "[TRAIN] E1 Cutoff Time": info["e1_avg_cutoff_time"],
                         "[TRAIN] V Cutoff Time": info["v_avg_cutoff_time"],
+
                         "Training Episode": n_episode,
                         "Training Steps": self.training_time_steps,
                     }
@@ -338,7 +346,7 @@ class DqnTrainer:
 
             while not done:
                 action = self.qnet.get_action(observation, epsilon=0.0)
-
+                print(action, end=",")
                 next_observation, reward, terminated, truncated, _ = self.valid_env.step(action)
 
                 episode_reward += reward
@@ -397,6 +405,28 @@ class DqnTester:
             action = self.qnet.get_action(observation, epsilon=0.0)
 
             next_observation, reward, terminated, truncated, info = self.env.step(action)
+
+            print(
+                "[Step: {0:>3}] Ob.: {1:<22} Act: {2} N.Ob.: {3:<22} "
+                "R.: {4} Term.: {5:<5}".format(
+                    time_steps,
+                    str(observation),
+                    action,
+                    str(next_observation),
+                    reward,
+                    str(terminated),
+                ),
+                end=" "
+            )
+            print(
+                "S.P.: {:5.3f}".format(info["avg_swap_prob"]),
+                "age: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
+                    info["e0_avg_age"], info["e1_avg_age"], info["v_avg_age"]
+                ),
+                "cutoff_time: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
+                    info["e0_avg_cutoff_time"], info["e1_avg_cutoff_time"], info["v_avg_cutoff_time"]
+                )
+            )
 
             episode_reward += reward
             observation = next_observation
