@@ -296,7 +296,7 @@ class SimpleQuantumNetworkEnv(gym.Env):
     def update_edge_age(self, edge_idx):
         if self.quantum_network.edge_dict[edge_idx].age != -1:
             self.quantum_network.edge_dict[edge_idx].age_list.append(
-                self.quantum_network.edge_dict[edge_idx].age
+                self.quantum_network.edge_dict[edge_idx].age + 1
             )
             # self.quantum_network.edge_dict[edge_idx].average_age = self.running_mean(
             #     self.quantum_network.edge_dict[edge_idx].age_list, self.running_average_window
