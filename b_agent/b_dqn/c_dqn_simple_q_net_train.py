@@ -21,6 +21,12 @@ def main():
     env = SimpleQuantumNetworkEnv(max_step=1_000)
     valid_env = SimpleQuantumNetworkEnv(max_step=1_000)
 
+    print("probability_entanglement('e0'): {0}".format(env.probability_entanglement("e0")))
+    print("probability_entanglement('e1'): {0}".format(env.probability_entanglement("e1")))
+    print("probability_valid_state(age=0): {0}".format(env.probability_valid_state(age=0)))
+    print("probability_valid_state(age=7): {0}".format(env.probability_valid_state(age=7)))
+    print("probability_valid_state(age=10): {0}".format(env.probability_valid_state(age=10)))
+
     config = {
         "env_name": ENV_NAME,                             # 환경의 이름
         "max_num_episodes": 1000,                          # 훈련을 위한 최대 에피소드 횟수
@@ -46,7 +52,7 @@ def main():
     qnet = QNet(n_features=6, action_space=env.action_space)
     target_qnet = QNet(n_features=6, action_space=env.action_space)
 
-    use_wandb = False
+    use_wandb = True
     dqn = DqnTrainer(
         env=env, valid_env=valid_env, qnet=qnet, target_qnet=target_qnet, config=config, use_wandb=use_wandb,
         current_dir=CURRENT_DIR

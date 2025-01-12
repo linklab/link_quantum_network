@@ -1,5 +1,4 @@
 # https://gymnasium.farama.org/environments/classic_control/cart_pole/
-import gymnasium as gym
 import os
 
 from a_env.simple_quantum_network import SimpleQuantumNetworkEnv
@@ -19,7 +18,11 @@ def main():
     dqn_tester = DqnTester(
         env=test_env, qnet = qnet, env_name=ENV_NAME, current_dir=CURRENT_DIR
     )
-    dqn_tester.test()
+
+    for _ in range(3):
+        print("#" * 50)
+        dqn_tester.test()
+        print("#" * 50)
 
     test_env.close()
 

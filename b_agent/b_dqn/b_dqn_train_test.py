@@ -365,15 +365,10 @@ class DqnTester:
         if not os.path.exists(self.video_dir):
             os.mkdir(self.video_dir)
 
-        self.env = gym.wrappers.RecordVideo(
-            env=self.env, video_folder=self.video_dir,
-            name_prefix="dqn_{0}_test_video".format(env_name)
-        )
-
         self.qnet = qnet
 
         model_params = torch.load(
-            os.path.join(self.model_dir, "dqn_{0}_latest.pth".format(env_name)),
+            os.path.join(self.model_dir, "{0}_checkpoint_latest.pt".format(env_name)),
             weights_only=True,
             map_location=DEVICE
         )
@@ -384,7 +379,7 @@ class DqnTester:
         episode_reward = 0  # cumulative_reward
 
         # Environment 초기화와 변수 초기화
-        observation, _ = self.env.reset()
+        observation, info = self.env.reset()
         time_steps = 0
 
         done = False
@@ -393,11 +388,19 @@ class DqnTester:
             time_steps += 1
             action = self.qnet.get_action(observation, epsilon=0.0)
 
-            next_observation, reward, terminated, truncated, _ = self.env.step(action)
+            next_observation, reward, terminated, truncated, info = self.env.step(action)
 
             episode_reward += reward
             observation = next_observation
             done = terminated or truncated
 
         self.env.close()
-        print("[TOAL_STEPS: {0:3d}, EPISODE REWARD: {1:4.1f}".format(time_steps, episode_reward))
+        print("TOTAL STEPS: {0:3d}".format(time_steps))
+        print("EPISODE REWARD: {0:5.2f}".format(episode_reward))
+        print("Average Swap Probability: {0:5.2f}".format(info["avg_swap_prob"]))
+        print("E0 Average Age: {0:5.2f}".format(info["e0_avg_age"]))
+        print("E1 Average Age: {0:5.2f}".format(info["e1_avg_age"]))
+        print("V Average Age: {0:5.2f}".format(info["v_avg_age"]))
+        print("E0 Average Cutoff Time: {0:5.2f}".format(info["e0_avg_cutoff_time"]))
+        print("E1 Average Cutoff Time: {0:5.2f}".format(info["e1_avg_cutoff_time"]))
+        print("V Average Cutoff Time: {0:5.2f}".format(info["v_avg_cutoff_time"]))
