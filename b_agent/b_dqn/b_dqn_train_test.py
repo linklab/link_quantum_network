@@ -2,7 +2,6 @@
 import os
 import time
 from datetime import datetime
-from shutil import copyfile
 
 import gymnasium as gym
 import numpy as np
@@ -275,20 +274,25 @@ class DqnTrainer:
         observations, actions, next_observations, rewards, dones = batch
         
         multi_q_out = self.qnet(observations)
+        multi_next_q_out = self.qnet(next_observations)
         with torch.no_grad():
             multi_q_prime_out = self.target_qnet(next_observations)
 
         total_loss = 0
 
-        for idx, (q_out, q_prime_out) in enumerate(zip(multi_q_out, multi_q_prime_out)):
+        for idx, (q_out, next_q_out, q_prime_out) in enumerate(zip(multi_q_out, multi_next_q_out, multi_q_prime_out)):
             q_values = q_out.gather(dim=-1, index=actions[idx].unsqueeze(dim=-1))
 
+            ## Double DQN
             with torch.no_grad():
-                max_q_prime = q_prime_out.max(dim=1, keepdim=True).values
+                target_argmax_action = torch.argmax(next_q_out, dim=-1, keepdim=True)
+                max_q_prime = q_prime_out.gather(dim=-1, index=target_argmax_action)
                 max_q_prime[dones] = 0.0
 
                 # target_state_action_values.shape: torch.Size([32, 1])
                 targets = rewards + self.config["gamma"] * max_q_prime
+
+                # print(q_out.shape, q_prime_out.shape, next_q_out.shape, target_argmax_action.shape, targets.shape, rewards.shape, max_q_prime.shape, "!!!!!!!!!!")
 
             # loss is just scalar torch value
             total_loss += F.mse_loss(targets.detach(), q_values)
@@ -309,6 +313,10 @@ class DqnTrainer:
 
         self.optimizer.zero_grad()
         total_loss.backward()
+
+        max_norm = 1.0  # Gradient norm의 최대값
+        torch.nn.utils.clip_grad_norm_(self.qnet.parameters(), max_norm)
+
         self.optimizer.step()
 
         # sync
