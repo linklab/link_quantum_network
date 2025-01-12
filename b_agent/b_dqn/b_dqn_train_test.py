@@ -303,7 +303,7 @@ class DqnTrainer:
                 # print(q_out.shape, q_prime_out.shape, next_q_out.shape, target_argmax_action.shape, targets.shape, rewards.shape, max_q_prime.shape, "!!!!!!!!!!")
 
             # loss is just scalar torch value
-            total_loss += F.mse_loss(targets.detach(), q_values)
+            total_loss += F.huber_loss(targets.detach(), q_values)
         
         total_loss /= len(multi_q_out)
 
