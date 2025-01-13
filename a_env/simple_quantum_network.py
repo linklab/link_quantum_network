@@ -114,13 +114,14 @@ class SimpleQuantumNetworkEnv(gym.Env):
 
     def get_observation(self):
         observation = [
-            self.quantum_network.edge_dict["e0"].entanglement,
-            self.quantum_network.edge_dict["e0"].age,
-            self.quantum_network.edge_dict["e1"].entanglement,
-            self.quantum_network.edge_dict["e1"].age,
-            self.quantum_network.edge_dict["v"].entanglement,
-            self.quantum_network.edge_dict["v"].age
+            self.quantum_network.edge_dict["e0"].entanglement / self.max_entanglement_age,
+            self.quantum_network.edge_dict["e0"].age / self.max_entanglement_age,
+            self.quantum_network.edge_dict["e1"].entanglement / self.max_entanglement_age,
+            self.quantum_network.edge_dict["e1"].age / self.max_entanglement_age,
+            self.quantum_network.edge_dict["v"].entanglement / self.max_entanglement_age,
+            self.quantum_network.edge_dict["v"].age / self.max_entanglement_age
         ]
+
         return observation
 
     def reset(self):
