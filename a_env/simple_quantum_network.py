@@ -313,9 +313,11 @@ class SimpleQuantumNetworkEnv(gym.Env):
 
             self.quantum_network.edge_dict["e0"].entanglement = 0
             self.quantum_network.edge_dict["e0"].age = -1
+            self.quantum_network.edge_dict["e0"].last_entanglement_success_timestep = -1
 
             self.quantum_network.edge_dict["e1"].entanglement = 0
             self.quantum_network.edge_dict["e1"].age = -1
+            self.quantum_network.edge_dict["e1"].last_entanglement_success_timestep = -1
         else:
             pass
 
@@ -333,7 +335,11 @@ class SimpleQuantumNetworkEnv(gym.Env):
             )
 
     def update_edge_age(self, edge_idx):
-        if self.quantum_network.edge_dict[edge_idx].age != -1:
+        entanglement_success_after_entanglement_conditions = [
+            self.quantum_network.edge_dict[edge_idx].last_entanglement_success_timestep != -1,
+            self.quantum_network.edge_dict[edge_idx].age != -1
+        ]
+        if all(entanglement_success_after_entanglement_conditions):
             self.quantum_network.edge_dict[edge_idx].age_list.append(
                 self.quantum_network.edge_dict[edge_idx].age
             )
