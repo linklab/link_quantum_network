@@ -258,6 +258,7 @@ class DqnTrainer:
                 )
 
             if n_episode % (self.config["print_episode_interval"] * 10) == 0:
+                print("swap_prob_list: ", info["swap_prob_list"])
                 print("e0_age_list: ", info["e0_age_list"])
                 print("e0_cutoff_try_list: ", info["e0_cutoff_try_list"])
                 print("e1_age_list: ", info["e1_age_list"])

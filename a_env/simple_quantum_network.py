@@ -129,6 +129,7 @@ class SimpleQuantumNetworkEnv(gym.Env):
 
         info = {
             "avg_swap_prob": 0.0,
+            "swap_prob_list": []
         }
 
         for edge_idx in ["e0", "e1", "v"]:
@@ -166,6 +167,9 @@ class SimpleQuantumNetworkEnv(gym.Env):
 
         # action: [e0_action, e1_action, v_action]
         e0_action, e1_action, v_action = action
+
+        # probability_swap_list 추가
+        self.probability_swap_list.append(self.probability_swap())
 
         ########################
         # e0 action processing #
@@ -231,15 +235,13 @@ class SimpleQuantumNetworkEnv(gym.Env):
                 self.quantum_network.edge_dict[edge_idx].age
             )
 
-        # probability_swap_list 추가
-        self.probability_swap_list.append(self.probability_swap())
-
         # 현재 observation 초기화
         self.current_observation = self.get_observation()
         next_observation = self.current_observation
 
         info = {
-            "avg_swap_prob": np.mean(self.probability_swap_list)
+            "avg_swap_prob": np.mean(self.probability_swap_list),
+            "swap_prob_list": self.probability_swap_list
         }
 
         terminated = truncated = False
@@ -338,7 +340,8 @@ class SimpleQuantumNetworkEnv(gym.Env):
             self.quantum_network.edge_dict["e1"].entanglement = 0
             self.quantum_network.edge_dict["e1"].age = -1
         else:
-            pass
+            if self.quantum_network.edge_dict["v"].entanglement == 1:
+                self.quantum_network.edge_dict["v"].age += 1
 
         self.quantum_network.edge_dict["v"].last_entanglement_try_timestep = self.current_step
 
@@ -403,7 +406,10 @@ class SimpleQuantumNetworkEnv(gym.Env):
             self.quantum_network.edge_dict["e0"].age,
             self.quantum_network.edge_dict["e1"].age
         )
-        prob_swap = self.probability_valid_state(max_age)
+        if max_age == -1:
+            prob_swap = 0.0
+        else:
+            prob_swap = self.probability_valid_state(max_age)
 
         return prob_swap
 
@@ -444,6 +450,7 @@ def test_env():
     print(env.reset())
     print("probability_entanglement(0): {0}".format(env.probability_entanglement("e0")))
     print("probability_entanglement(1): {0}".format(env.probability_entanglement("e1")))
+    print("probability_valid_state(-1): {0}".format(env.probability_valid_state(age=-1)))
     print("probability_valid_state(0): {0}".format(env.probability_valid_state(age=0)))
     print("probability_valid_state(7): {0}".format(env.probability_valid_state(age=7)))
     print("probability_valid_state(10): {0}".format(env.probability_valid_state(age=10)))
@@ -503,6 +510,6 @@ def loop_test():
 
 
 if __name__ == "__main__":
-    # test_env()
-    loop_test()
+    test_env()
+    #loop_test()
 
