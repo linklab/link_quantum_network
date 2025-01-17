@@ -341,7 +341,7 @@ class SimpleQuantumNetworkEnv(gym.Env):
         ]
         if all(entanglement_success_after_entanglement_conditions):
             self.quantum_network.edge_dict[edge_idx].age_list.append(
-                self.quantum_network.edge_dict[edge_idx].age
+                self.current_step - self.quantum_network.edge_dict[edge_idx].last_entanglement_success_timestep
             )
             self.quantum_network.edge_dict[edge_idx].average_age = np.mean(
                 self.quantum_network.edge_dict[edge_idx].age_list
