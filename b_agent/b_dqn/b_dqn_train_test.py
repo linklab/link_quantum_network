@@ -76,18 +76,18 @@ class EarlyStopping:
             self.checkpoint_file_path, f"{self.config['env_name']}_checkpoint_latest.pt"
         )
 
-        self.max_validation_episode_reward_avg = None
+        self.max_episode_reward_lst_avg = None
 
-    def check_and_save(self, new_validation_episode_reward_avg, model):
+    def check_and_save(self, new_episode_reward_lst_avg, model):
         early_stop = False
 
-        if self.max_validation_episode_reward_avg is None:
-            self.max_validation_episode_reward_avg = new_validation_episode_reward_avg
+        if self.max_episode_reward_lst_avg is None:
+            self.max_episode_reward_lst_avg = new_episode_reward_lst_avg
             message = f'Early stopping is stated!'
-        elif new_validation_episode_reward_avg > self.max_validation_episode_reward_avg + self.config["early_stop_delta"]:
-            message = f'V_loss decreased ({self.max_validation_episode_reward_avg:7.5f} --> {new_validation_episode_reward_avg:7.5f}). Saving model...'
-            self.save_checkpoint(new_validation_episode_reward_avg, model)
-            self.max_validation_episode_reward_avg = new_validation_episode_reward_avg
+        elif new_episode_reward_lst_avg > self.max_episode_reward_lst_avg + self.config["early_stop_delta"]:
+            message = f'V_loss decreased ({self.max_episode_reward_lst_avg:7.5f} --> {new_episode_reward_lst_avg:7.5f}). Saving model...'
+            self.save_checkpoint(new_episode_reward_lst_avg, model)
+            self.max_episode_reward_lst_avg = new_episode_reward_lst_avg
             self.counter = 0
         else:
             self.counter += 1
@@ -98,17 +98,17 @@ class EarlyStopping:
 
         return message, early_stop
 
-    def save_checkpoint(self, new_validation_episode_reward_avg, model):
+    def save_checkpoint(self, new_episode_reward_lst_avg, model):
         file_path = os.path.join(
             self.checkpoint_file_path,
-            f"{self.config['env_name']}_{self.run_time_str}_checkpoint_{new_validation_episode_reward_avg:5.2f}.pt"
+            f"{self.config['env_name']}_{self.run_time_str}_checkpoint_{new_episode_reward_lst_avg:5.2f}.pt"
         )
 
         '''Saves model when validation loss decrease.'''
         torch.save(model.state_dict(), file_path)
         torch.save(model.state_dict(), self.latest_file_path)
 
-        self.max_validation_episode_reward_avg = new_validation_episode_reward_avg
+        self.max_episode_reward_lst_avg = new_episode_reward_lst_avg
 
 
 class DqnTrainer:
@@ -167,7 +167,10 @@ class DqnTrainer:
 
         self.total_train_start_time = time.time()
 
-        validation_episode_reward_avg = None
+        episode_reward_lst_avg = avg_swap_prob_lst_avg = \
+            e0_avg_age_lst_avg = e1_avg_age_lst_avg= v_avg_age_lst_avg = \
+            e0_entanglement_state_rate_lst_avg = e1_entanglement_state_rate_lst_avg = v_entanglement_state_rate_lst_avg = \
+            e0_avg_cutoff_try_time_lst_avg = e1_avg_cutoff_try_time_lst_avg = v_avg_cutoff_try_time_lst_avg = None
 
         is_terminated = False
 
@@ -199,19 +202,33 @@ class DqnTrainer:
                     loss = self.train()
 
                 if self.time_steps % self.config["validation_time_steps_interval"] == 0:
-                    validation_episode_reward_avg = self.validate()
-                    message, is_terminated = early_stopping.check_and_save(validation_episode_reward_avg, self.qnet)
+                    (episode_reward_lst_avg,
+                    avg_swap_prob_lst_avg,
+
+                    e0_avg_age_lst_avg,
+                    e1_avg_age_lst_avg,
+                    v_avg_age_lst_avg,
+
+                    e0_entanglement_state_rate_lst_avg,
+                    e1_entanglement_state_rate_lst_avg,
+                    v_entanglement_state_rate_lst_avg,
+
+                    e0_avg_cutoff_try_time_lst_avg,
+                    e1_avg_cutoff_try_time_lst_avg,
+                    v_avg_cutoff_try_time_lst_avg) = self.validate()
+                    message, is_terminated = early_stopping.check_and_save(episode_reward_lst_avg, self.qnet)
                     print(message)
-                    # if validation_episode_reward_avg > self.config["episode_reward_avg_solved"]:
+
+                    # if episode_reward_lst_avg > self.config["episode_reward_avg_solved"]:
                     #     print("Solved in {0:,} time steps ({1:,} training steps)!".format(
                     #         self.time_steps, self.training_time_steps
                     #     ))
-                    #     self.model_save(validation_episode_reward_avg)
+                    #     self.model_save(episode_reward_lst_avg)
                     #     is_terminated = True
                     #     break
 
-            if validation_episode_reward_avg is None:
-                validation_episode_reward_avg = episode_reward
+            if episode_reward_lst_avg is None:
+                episode_reward_lst_avg = episode_reward
 
             if n_episode % self.config["print_episode_interval"] == 0:
                 print(
@@ -225,35 +242,78 @@ class DqnTrainer:
                     "age: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
                         info["e0_avg_age"], info["e1_avg_age"], info["v_avg_age"]
                     ),
-                    "cutoff_time: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
-                        info["e0_avg_cutoff_time"], info["e1_avg_cutoff_time"], info["v_avg_cutoff_time"]
+                    "cutoff_try_time: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
+                        info["e0_avg_cutoff_try_time"], info["e1_avg_cutoff_try_time"], info["v_avg_cutoff_try_time"]
                     )
                 )
+
+            if n_episode % (self.config["print_episode_interval"] * 10) == 0:
+                print("e0_age_list: ", info["e0_age_list"])
+                print("e0_cutoff_try_list: ", info["e0_cutoff_try_list"])
+                print("e1_age_list: ", info["e1_age_list"])
+                print("e1_cutoff_try_list: ", info["e1_cutoff_try_list"])
+                print("v_age_list: ", info["v_age_list"])
+                print("v_cutoff_try_list: ", info["v_cutoff_try_list"])
 
             if self.use_wandb:
                 self.wandb.log(
                     {
-                        "[VALIDATION] Mean Episode Reward ({0} Episodes)".format(
+                        "VALIDATION/Episode Reward ({0} Episodes)".format(
                             self.config["validation_num_episodes"]
-                        ): validation_episode_reward_avg,
-                        "[TRAIN] Episode Reward": episode_reward,
-                        "[TRAIN] Loss": loss if loss != 0.0 else 0.0,
-                        "[TRAIN] Epsilon": epsilon,
-                        "[TRAIN] Replay buffer": self.replay_buffer.size(),
+                        ): episode_reward_lst_avg,
 
-                        "[TRAIN] Moving Avg. Swap Prob.": info["avg_swap_prob"],
+                        "VALIDATION/Swap Prob. ({0} Episodes)".format(
+                            self.config["validation_num_episodes"]
+                        ): avg_swap_prob_lst_avg,
 
-                        "[TRAIN] E0 Average Age": info["e0_avg_age"],
-                        "[TRAIN] E1 Average Age": info["e1_avg_age"],
-                        "[TRAIN] V Average Age": info["v_avg_age"],
+                        "VALIDATION/E0 Average Age ({0} Episodes)".format(
+                            self.config["validation_num_episodes"]
+                        ): e0_avg_age_lst_avg,
+                        "VALIDATION/E1 Average Age({0} Episodes)".format(
+                            self.config["validation_num_episodes"]
+                        ): e1_avg_age_lst_avg,
+                        "VALIDATION/V Average Age({0} Episodes)".format(
+                            self.config["validation_num_episodes"]
+                        ): v_avg_age_lst_avg,
 
-                        "[TRAIN] E0 Entanglement Rate": info["e0_entanglement_rate"],
-                        "[TRAIN] E1 Entanglement Rate": info["e1_entanglement_rate"],
-                        "[TRAIN] V Entanglement Rate": info["v_entanglement_rate"],
+                        "VALIDATION/E0 Entanglement Rate({0} Episodes)".format(
+                            self.config["validation_num_episodes"]
+                        ): e0_entanglement_state_rate_lst_avg,
+                        "VALIDATION/E1 Entanglement Rate({0} Episodes)".format(
+                            self.config["validation_num_episodes"]
+                        ): e1_entanglement_state_rate_lst_avg,
+                        "VALIDATION/V Entanglement Rate({0} Episodes)".format(
+                            self.config["validation_num_episodes"]
+                        ): v_entanglement_state_rate_lst_avg,
 
-                        "[TRAIN] E0 Cutoff Time": info["e0_avg_cutoff_time"],
-                        "[TRAIN] E1 Cutoff Time": info["e1_avg_cutoff_time"],
-                        "[TRAIN] V Cutoff Time": info["v_avg_cutoff_time"],
+                        "VALIDATION/E0 Cutoff Try Time({0} Episodes)".format(
+                            self.config["validation_num_episodes"]
+                        ): e0_avg_cutoff_try_time_lst_avg,
+                        "VALIDATION/E1 Cutoff Try Time({0} Episodes)".format(
+                            self.config["validation_num_episodes"]
+                        ): e1_avg_cutoff_try_time_lst_avg,
+                        "VALIDATION/V Cutoff Try Time({0} Episodes)".format(
+                            self.config["validation_num_episodes"]
+                        ): v_avg_cutoff_try_time_lst_avg,
+
+                        "TRAIN/Episode Reward": episode_reward,
+                        "TRAIN/Loss": loss if loss != 0.0 else 0.0,
+                        "TRAIN/Epsilon": epsilon,
+                        "TRAIN/Replay buffer": self.replay_buffer.size(),
+
+                        "TRAIN/Swap Prob.": info["avg_swap_prob"],
+
+                        "TRAIN/E0 Average Age": info["e0_avg_age"],
+                        "TRAIN/E1 Average Age": info["e1_avg_age"],
+                        "TRAIN/V Average Age": info["v_avg_age"],
+
+                        "TRAIN/E0 Entanglement State Rate": info["e0_entanglement_state_rate"],
+                        "TRAIN/E1 Entanglement State Rate": info["e1_entanglement_state_rate"],
+                        "TRAIN/V Entanglement State Rate": info["v_entanglement_state_rate"],
+
+                        "TRAIN/E0 Cutoff Try Time": info["e0_avg_cutoff_try_time"],
+                        "TRAIN/E1 Cutoff Try Time": info["e1_avg_cutoff_try_time"],
+                        "TRAIN/V Cutoff Try Time": info["v_avg_cutoff_try_time"],
 
                         "Training Episode": n_episode,
                         "Training Steps": self.training_time_steps,
@@ -335,38 +395,97 @@ class DqnTrainer:
 
     def validate(self):
         episode_reward_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
+        avg_swap_prob_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
+
+        e0_avg_age_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
+        e1_avg_age_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
+        v_avg_age_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
+
+        e0_entanglement_state_rate_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
+        e1_entanglement_state_rate_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
+        v_entanglement_state_rate_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
+
+        e0_avg_cutoff_try_time_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
+        e1_avg_cutoff_try_time_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
+        v_avg_cutoff_try_time_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
+
         self.qnet.eval()
 
         for i in range(self.config["validation_num_episodes"]):
             episode_reward = 0
 
-            observation, _ = self.valid_env.reset()
+            observation, info = self.valid_env.reset()
 
             done = False
 
             while not done:
                 action = self.qnet.get_action(observation, epsilon=0.0)
-                print(action, end=",")
-                next_observation, reward, terminated, truncated, _ = self.valid_env.step(action)
+                next_observation, reward, terminated, truncated, info = self.valid_env.step(action)
 
                 episode_reward += reward
                 observation = next_observation
                 done = terminated or truncated
 
             episode_reward_lst[i] = episode_reward
+            avg_swap_prob_lst[i] = info["avg_swap_prob"]
 
-        episode_reward_avg = np.average(episode_reward_lst)
+            e0_avg_age_lst[i] = info["e0_avg_age"]
+            e1_avg_age_lst[i] = info["e1_avg_age"]
+            v_avg_age_lst[i] = info["v_avg_age"]
+
+            e0_entanglement_state_rate_lst[i] = info["e0_entanglement_state_rate"]
+            e1_entanglement_state_rate_lst[i] = info["e1_entanglement_state_rate"]
+            v_entanglement_state_rate_lst[i] = info["v_entanglement_state_rate"]
+
+            e0_avg_cutoff_try_time_lst[i] = info["e0_avg_cutoff_try_time"]
+            e1_avg_cutoff_try_time_lst[i] = info["e1_avg_cutoff_try_time"]
+            v_avg_cutoff_try_time_lst[i] = info["v_avg_cutoff_try_time"]
+
+            print("e0_age_list: ", info["e0_age_list"])
+            print("e0_cutoff_try_list: ", info["e0_cutoff_try_list"])
+            print("e1_age_list: ", info["e1_age_list"])
+            print("e1_cutoff_try_list: ", info["e1_cutoff_try_list"])
+            print("v_age_list: ", info["v_age_list"])
+            print("v_cutoff_try_list: ", info["v_cutoff_try_list"])
+
+        episode_reward_lst_avg = np.average(episode_reward_lst)
+        avg_swap_prob_lst_avg = np.average(avg_swap_prob_lst)
+
+        e0_avg_age_lst_avg = np.average(e0_avg_age_lst)
+        e1_avg_age_lst_avg = np.average(e1_avg_age_lst)
+        v_avg_age_lst_avg = np.average(v_avg_age_lst)
+
+        e0_entanglement_state_rate_lst_avg = np.average(e0_entanglement_state_rate_lst)
+        e1_entanglement_state_rate_lst_avg = np.average(e1_entanglement_state_rate_lst)
+        v_entanglement_state_rate_lst_avg = np.average(v_entanglement_state_rate_lst)
+
+        e0_avg_cutoff_try_time_lst_avg = np.average(e0_avg_cutoff_try_time_lst)
+        e1_avg_cutoff_try_time_lst_avg = np.average(e1_avg_cutoff_try_time_lst)
+        v_avg_cutoff_try_time_lst_avg = np.average(v_avg_cutoff_try_time_lst)
 
         total_training_time = time.time() - self.total_train_start_time
         total_training_time = time.strftime("%H:%M:%S", time.gmtime(total_training_time))
 
         print(
             "[Validation Episode Reward: {0}] Average: {1:.3f}, Elapsed Time: {2}".format(
-                episode_reward_lst, episode_reward_avg, total_training_time
+                episode_reward_lst, episode_reward_lst_avg, total_training_time
             )
         )
         self.qnet.train()        
-        return episode_reward_avg
+        return (episode_reward_lst_avg,
+                avg_swap_prob_lst_avg,
+
+                e0_avg_age_lst_avg,
+                e1_avg_age_lst_avg,
+                v_avg_age_lst_avg,
+
+                e0_entanglement_state_rate_lst_avg,
+                e1_entanglement_state_rate_lst_avg,
+                v_entanglement_state_rate_lst_avg,
+
+                e0_avg_cutoff_try_time_lst_avg,
+                e1_avg_cutoff_try_time_lst_avg,
+                v_avg_cutoff_try_time_lst_avg)
 
 
 class DqnTester:
@@ -423,8 +542,8 @@ class DqnTester:
                 "age: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
                     info["e0_avg_age"], info["e1_avg_age"], info["v_avg_age"]
                 ),
-                "cutoff_time: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
-                    info["e0_avg_cutoff_time"], info["e1_avg_cutoff_time"], info["v_avg_cutoff_time"]
+                "cutoff_try_time: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
+                    info["e0_avg_cutoff_try_time"], info["e1_avg_cutoff_try_time"], info["v_avg_cutoff_try_time"]
                 )
             )
 
@@ -439,6 +558,6 @@ class DqnTester:
         print("E0 Average Age: {0:5.2f}".format(info["e0_avg_age"]))
         print("E1 Average Age: {0:5.2f}".format(info["e1_avg_age"]))
         print("V Average Age: {0:5.2f}".format(info["v_avg_age"]))
-        print("E0 Average Cutoff Time: {0:5.2f}".format(info["e0_avg_cutoff_time"]))
-        print("E1 Average Cutoff Time: {0:5.2f}".format(info["e1_avg_cutoff_time"]))
-        print("V Average Cutoff Time: {0:5.2f}".format(info["v_avg_cutoff_time"]))
+        print("E0 Average Cutoff Time: {0:5.2f}".format(info["e0_avg_cutoff_try_time"]))
+        print("E1 Average Cutoff Time: {0:5.2f}".format(info["e1_avg_cutoff_try_time"]))
+        print("V Average Cutoff Time: {0:5.2f}".format(info["v_avg_cutoff_try_time"]))
