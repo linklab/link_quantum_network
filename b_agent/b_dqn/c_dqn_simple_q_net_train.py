@@ -18,8 +18,8 @@ def main():
     print("TORCH VERSION:", torch.__version__)
     ENV_NAME = "Simple_Q_Net"
 
-    env = SimpleQuantumNetworkEnv(max_step=1_000)
-    valid_env = SimpleQuantumNetworkEnv(max_step=1_000)
+    env = SimpleQuantumNetworkEnv(max_step=300)
+    valid_env = SimpleQuantumNetworkEnv(max_step=300)
 
     print("probability_entanglement('e0'): {0}".format(env.probability_entanglement("e0")))
     print("probability_entanglement('e1'): {0}".format(env.probability_entanglement("e1")))
