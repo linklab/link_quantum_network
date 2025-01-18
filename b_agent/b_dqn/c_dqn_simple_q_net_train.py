@@ -52,7 +52,7 @@ def main():
     qnet = QNet(n_features=6, action_space=env.action_space)
     target_qnet = QNet(n_features=6, action_space=env.action_space)
 
-    use_wandb = True
+    use_wandb = False
     dqn = DqnTrainer(
         env=env, valid_env=valid_env, qnet=qnet, target_qnet=target_qnet, config=config, use_wandb=use_wandb,
         current_dir=CURRENT_DIR
