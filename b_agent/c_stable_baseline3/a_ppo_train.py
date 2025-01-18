@@ -205,7 +205,7 @@ def main():
     print("probability_valid_state(age=7): {0}".format(train_env.probability_valid_state(age=7)))
     print("probability_valid_state(age=10): {0}".format(train_env.probability_valid_state(age=10)))
 
-    model = PPO("MlpPolicy", train_env, verbose=1)
+    model = PPO("MlpPolicy", train_env, ent_coef=0.1, verbose=1)
 
     use_wandb = True
 
