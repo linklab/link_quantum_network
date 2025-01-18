@@ -171,7 +171,7 @@ class DqnTrainer:
             e0_avg_flat_age_lst_avg = e0_avg_entanglement_age_lst_avg = \
             e1_avg_flat_age_lst_avg = e1_avg_entanglement_age_lst_avg = \
             v_avg_flat_age_lst_avg = v_avg_entanglement_age_lst_avg = \
-            e0_entanglement_state_rate_lst_avg = e1_entanglement_state_rate_lst_avg = v_entanglement_state_rate_lst_avg = \
+            e0_entanglement_state_fraction_lst_avg = e1_entanglement_state_fraction_lst_avg = v_entanglement_state_fraction_lst_avg = \
             e0_avg_cutoff_try_time_lst_avg = e1_avg_cutoff_try_time_lst_avg = v_avg_cutoff_try_time_lst_avg = None
 
         is_terminated = False
@@ -215,9 +215,9 @@ class DqnTrainer:
                     e1_avg_entanglement_age_lst_avg,
                     v_avg_entanglement_age_lst_avg,
 
-                    e0_entanglement_state_rate_lst_avg,
-                    e1_entanglement_state_rate_lst_avg,
-                    v_entanglement_state_rate_lst_avg,
+                    e0_entanglement_state_fraction_lst_avg,
+                    e1_entanglement_state_fraction_lst_avg,
+                    v_entanglement_state_fraction_lst_avg,
 
                     e0_avg_cutoff_try_time_lst_avg,
                     e1_avg_cutoff_try_time_lst_avg,
@@ -289,12 +289,12 @@ class DqnTrainer:
                         "VALIDATION/V Entang. Age({0} Episodes)".format(self.config["validation_num_episodes"]):
                             v_avg_entanglement_age_lst_avg,
 
-                        "VALIDATION/E0 Entang. Rate ({0} Episodes)".format(self.config["validation_num_episodes"]):
-                            e0_entanglement_state_rate_lst_avg,
-                        "VALIDATION/E1 Entang. Rate ({0} Episodes)".format(self.config["validation_num_episodes"]):
-                            e1_entanglement_state_rate_lst_avg,
-                        "VALIDATION/V Entang. Rate ({0} Episodes)".format(self.config["validation_num_episodes"]):
-                            v_entanglement_state_rate_lst_avg,
+                        "VALIDATION/E0 Entang. State Fraction ({0} Episodes)".format(self.config["validation_num_episodes"]):
+                            e0_entanglement_state_fraction_lst_avg,
+                        "VALIDATION/E1 Entang. State Fraction ({0} Episodes)".format(self.config["validation_num_episodes"]):
+                            e1_entanglement_state_fraction_lst_avg,
+                        "VALIDATION/V Entang. State Fraction ({0} Episodes)".format(self.config["validation_num_episodes"]):
+                            v_entanglement_state_fraction_lst_avg,
 
                         "VALIDATION/E0 Cutoff Try Time ({0} Episodes)".format(self.config["validation_num_episodes"]):
                             e0_avg_cutoff_try_time_lst_avg,
@@ -318,9 +318,9 @@ class DqnTrainer:
                         "TRAIN/E1 Entang. Age": info["e1_avg_entanglement_age"],
                         "TRAIN/V Entang. Age": info["v_avg_entanglement_age"],
 
-                        "TRAIN/E0 Entang. State Rate": info["e0_entanglement_state_rate"],
-                        "TRAIN/E1 Entang. State Rate": info["e1_entanglement_state_rate"],
-                        "TRAIN/V Entang. State Rate": info["v_entanglement_state_rate"],
+                        "TRAIN/E0 Entang. State Fraction": info["e0_entanglement_state_fraction"],
+                        "TRAIN/E1 Entang. State Fraction": info["e1_entanglement_state_fraction"],
+                        "TRAIN/V Entang. State Fraction": info["v_entanglement_state_fraction"],
 
                         "TRAIN/E0 Cutoff Try Time": info["e0_avg_cutoff_try_time"],
                         "TRAIN/E1 Cutoff Try Time": info["e1_avg_cutoff_try_time"],
@@ -416,9 +416,9 @@ class DqnTrainer:
         e1_avg_entanglement_age_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
         v_avg_entanglement_age_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
 
-        e0_entanglement_state_rate_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
-        e1_entanglement_state_rate_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
-        v_entanglement_state_rate_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
+        e0_entanglement_state_fraction_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
+        e1_entanglement_state_fraction_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
+        v_entanglement_state_fraction_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
 
         e0_avg_cutoff_try_time_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
         e1_avg_cutoff_try_time_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
@@ -452,9 +452,9 @@ class DqnTrainer:
             e1_avg_entanglement_age_lst[i] = info["e1_avg_entanglement_age"]
             v_avg_entanglement_age_lst[i] = info["v_avg_entanglement_age"]
 
-            e0_entanglement_state_rate_lst[i] = info["e0_entanglement_state_rate"]
-            e1_entanglement_state_rate_lst[i] = info["e1_entanglement_state_rate"]
-            v_entanglement_state_rate_lst[i] = info["v_entanglement_state_rate"]
+            e0_entanglement_state_fraction_lst[i] = info["e0_entanglement_state_fraction"]
+            e1_entanglement_state_fraction_lst[i] = info["e1_entanglement_state_fraction"]
+            v_entanglement_state_fraction_lst[i] = info["v_entanglement_state_fraction"]
 
             e0_avg_cutoff_try_time_lst[i] = info["e0_avg_cutoff_try_time"]
             e1_avg_cutoff_try_time_lst[i] = info["e1_avg_cutoff_try_time"]
@@ -471,9 +471,9 @@ class DqnTrainer:
         e1_avg_entanglement_age_lst_avg = np.average(e1_avg_entanglement_age_lst)
         v_avg_entanglement_age_lst_avg = np.average(v_avg_entanglement_age_lst)
 
-        e0_entanglement_state_rate_lst_avg = np.average(e0_entanglement_state_rate_lst)
-        e1_entanglement_state_rate_lst_avg = np.average(e1_entanglement_state_rate_lst)
-        v_entanglement_state_rate_lst_avg = np.average(v_entanglement_state_rate_lst)
+        e0_entanglement_state_fraction_lst_avg = np.average(e0_entanglement_state_fraction_lst)
+        e1_entanglement_state_fraction_lst_avg = np.average(e1_entanglement_state_fraction_lst)
+        v_entanglement_state_fraction_lst_avg = np.average(v_entanglement_state_fraction_lst)
 
         e0_avg_cutoff_try_time_lst_avg = np.average(e0_avg_cutoff_try_time_lst)
         e1_avg_cutoff_try_time_lst_avg = np.average(e1_avg_cutoff_try_time_lst)
@@ -499,9 +499,9 @@ class DqnTrainer:
                 e1_avg_entanglement_age_lst_avg,
                 v_avg_entanglement_age_lst_avg,
 
-                e0_entanglement_state_rate_lst_avg,
-                e1_entanglement_state_rate_lst_avg,
-                v_entanglement_state_rate_lst_avg,
+                e0_entanglement_state_fraction_lst_avg,
+                e1_entanglement_state_fraction_lst_avg,
+                v_entanglement_state_fraction_lst_avg,
 
                 e0_avg_cutoff_try_time_lst_avg,
                 e1_avg_cutoff_try_time_lst_avg,

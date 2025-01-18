@@ -89,11 +89,11 @@ class SimpleQuantumNetworkEnv(gym.Env):
         # x_k: {0, 1}, m_k: {-1, 0, ..., max_age}
         # x_k: 0 또는 1의 값을 가지는 이진 상태.
         # m_k: -1 (inactive) 또는 정수 값 (entanglement age).
-        self.observation_space = gym.spaces.MultiDiscrete([
-            2, self.max_entanglement_age + 2,  # (x_0, m_0)
-            2, self.max_entanglement_age + 2,  # (x_1, m_1)
-            2, self.max_entanglement_age + 2  # (x_2, m_2)
-        ])
+        self.observation_space = gym.spaces.Box(
+            low=np.asarray([0.0, -1.0, 0.0, -1.0, 0.0, -1.0]),
+            high=np.asarray([1.0, 1.0, 1.0, 1.0, 1.0, 1.0]),
+            dtype=np.float64
+        )
 
         # 각 링크(e0, e1, v)에 대해 {reset(0), wait(1)}의 선택 가능
         self.action_space = gym.spaces.MultiDiscrete([2, 2, 2])
@@ -109,17 +109,17 @@ class SimpleQuantumNetworkEnv(gym.Env):
 
     def get_observation(self):
         observation = [
-            self.quantum_network.edge_dict["e0"].entanglement / self.max_entanglement_age,
+            self.quantum_network.edge_dict["e0"].entanglement,
             self.quantum_network.edge_dict["e0"].age / self.max_entanglement_age,
-            self.quantum_network.edge_dict["e1"].entanglement / self.max_entanglement_age,
+            self.quantum_network.edge_dict["e1"].entanglement,
             self.quantum_network.edge_dict["e1"].age / self.max_entanglement_age,
-            self.quantum_network.edge_dict["v"].entanglement / self.max_entanglement_age,
+            self.quantum_network.edge_dict["v"].entanglement,
             self.quantum_network.edge_dict["v"].age / self.max_entanglement_age
         ]
 
-        return observation
+        return np.asarray(observation)
 
-    def reset(self):
+    def reset(self, seed=0):
         self.quantum_network = SimpleQuantumNetwork()
 
         # 현재 observation 초기화
@@ -128,26 +128,26 @@ class SimpleQuantumNetworkEnv(gym.Env):
         self.probability_swap_list.clear()
 
         info = {
-            "avg_swap_prob": 0.0,
+            "swap_prob": 0.0,
             "swap_prob_list": []
         }
 
         for edge_idx in ["e0", "e1", "v"]:
-            key = "{0}_avg_flat_age".format(edge_idx)
+            key = "{0}_flat_age".format(edge_idx)
             info[key] = 0.0
 
-            key = "{0}_avg_entanglement_age".format(edge_idx)
+            key = "{0}_entanglement_age".format(edge_idx)
             info[key] = 0.0
 
             key = "{0}_age_list".format(edge_idx)
             value = self.quantum_network.edge_dict[edge_idx].age_list
             info[key] = value
 
-            key = "{0}_entanglement_state_rate".format(edge_idx)
+            key = "{0}_entanglement_state_fraction".format(edge_idx)
             value = self.quantum_network.edge_dict[edge_idx].number_of_entanglement_state / self.max_step
             info[key] = value
 
-            key = "{0}_avg_cutoff_try_time".format(edge_idx)
+            key = "{0}_cutoff_try_time".format(edge_idx)
             if len(self.quantum_network.edge_dict[edge_idx].cutoff_try_time_list) == 0:
                 value = 0.0
             else:
@@ -240,7 +240,7 @@ class SimpleQuantumNetworkEnv(gym.Env):
         next_observation = self.current_observation
 
         info = {
-            "avg_swap_prob": np.mean(self.probability_swap_list),
+            "swap_prob": np.mean(self.probability_swap_list),
             "swap_prob_list": self.probability_swap_list
         }
 
@@ -273,14 +273,14 @@ class SimpleQuantumNetworkEnv(gym.Env):
             if current_max is not None:
                 max_age_list.append(current_max)
 
-            key = "{0}_avg_flat_age".format(edge_idx)
+            key = "{0}_flat_age".format(edge_idx)
             if len(age_list_replaced) == 0:
                 value = 0.0
             else:
                 value = np.mean(age_list_replaced)
             info[key] = value
 
-            key = "{0}_avg_entanglement_age".format(edge_idx)
+            key = "{0}_entanglement_age".format(edge_idx)
             if len(max_age_list) == 0:
                 value = 0.0
             else:
@@ -291,11 +291,11 @@ class SimpleQuantumNetworkEnv(gym.Env):
             value = self.quantum_network.edge_dict[edge_idx].age_list
             info[key] = value
 
-            key = "{0}_entanglement_state_rate".format(edge_idx)
+            key = "{0}_entanglement_state_fraction".format(edge_idx)
             value = self.quantum_network.edge_dict[edge_idx].number_of_entanglement_state / self.max_step
             info[key] = value
 
-            key = "{0}_avg_cutoff_try_time".format(edge_idx)
+            key = "{0}_cutoff_try_time".format(edge_idx)
             if len(self.quantum_network.edge_dict[edge_idx].cutoff_try_time_list) == 0:
                 value = 0.0
             else:
@@ -402,14 +402,18 @@ class SimpleQuantumNetworkEnv(gym.Env):
         return prob_entanglement
 
     def probability_swap(self):
-        max_age = max(
-            self.quantum_network.edge_dict["e0"].age,
-            self.quantum_network.edge_dict["e1"].age
-        )
-        if max_age == -1:
-            prob_swap = 0.0
-        else:
+        entanglement_conditions = [
+            self.quantum_network.edge_dict["e0"].entanglement == 1,
+            self.quantum_network.edge_dict["e1"].entanglement == 1
+        ]
+        if all(entanglement_conditions):
+            max_age = max(
+                self.quantum_network.edge_dict["e0"].age,
+                self.quantum_network.edge_dict["e1"].age
+            )
             prob_swap = self.probability_valid_state(max_age)
+        else:
+            prob_swap = 0.0
 
         return prob_swap
 
@@ -490,12 +494,12 @@ def loop_test():
             end=" "
         )
         print(
-            "S.P.: {:5.3f}".format(info["avg_swap_prob"]),
+            "S.P.: {:5.3f}".format(info["swap_prob"]),
             "age: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
-                info["e0_avg_age"], info["e1_avg_age"], info["v_avg_age"]
+                info["e0_age"], info["e1_age"], info["v_age"]
             ),
             "cutoff_try_time: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
-                info["e0_avg_cutoff_try_time"], info["e1_avg_cutoff_try_time"], info["v_avg_cutoff_try_time"]
+                info["e0_cutoff_try_time"], info["e1_cutoff_try_time"], info["v_cutoff_try_time"]
             )
         )
         print("e0_age_list: ", info["e0_age_list"])
