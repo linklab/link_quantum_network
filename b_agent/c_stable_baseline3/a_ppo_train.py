@@ -1,10 +1,12 @@
 from stable_baselines3 import PPO
+
 from a_env.simple_quantum_network import SimpleQuantumNetworkEnv
 from stable_baselines3.common.callbacks import BaseCallback
 
 import numpy as np
 import wandb
 from datetime import datetime
+from torch import nn
 
 
 class EpisodeMetricsLoggingCallback(BaseCallback):
@@ -205,12 +207,23 @@ def main():
     print("probability_valid_state(age=7): {0}".format(train_env.probability_valid_state(age=7)))
     print("probability_valid_state(age=10): {0}".format(train_env.probability_valid_state(age=10)))
 
-    model = PPO("MlpPolicy", train_env, ent_coef=0.1, verbose=1)
+    # 커스텀 네트워크를 사용하여 모델 생성
+    policy_kwargs = dict(
+        activation_fn=nn.ReLU,
+        net_arch=dict(
+            pi=[256, 256],
+            vf=[256, 256]
+        )
+    )
+    model = PPO(
+        "MlpPolicy", policy_kwargs=policy_kwargs, env=train_env, batch_size=256, ent_coef=0.01, vf_coef=1.0, verbose=1
+    )
+    print(model.policy)
 
     use_wandb = True
 
     model.learn(
-        total_timesteps=1_000_000,
+        total_timesteps=3_000_000,
         callback=EpisodeMetricsLoggingCallback(
             validation_env=validation_env,
             use_wandb=use_wandb,

@@ -441,6 +441,14 @@ class SimpleQuantumNetworkEnv(gym.Env):
     def render(self):
         pass
 
+    # 2025.06.06
+
+    def fidelity_decay_swap(self, F0, t1, t2, tau):
+        F1 = F0 * np.exp(-t1 / tau)
+        F2 = F0 * np.exp(-t2 / tau)
+        term = ((4 * F1 - 1) / 3) * ((4 * F2 - 1) / 3)
+        return 0.75 * (1 / 3 + term)
+
 
 def test_env():
     # SimpleQuantumNetwork 객체 생성
