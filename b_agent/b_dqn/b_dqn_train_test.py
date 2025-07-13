@@ -168,9 +168,9 @@ class DqnTrainer:
         self.total_train_start_time = time.time()
 
         episode_reward_lst_avg = swap_prob_lst_avg = \
-            e0_flat_age_lst_avg = e0_entanglement_age_lst_avg = \
-            e1_flat_age_lst_avg = e1_entanglement_age_lst_avg = \
-            v_flat_age_lst_avg = v_entanglement_age_lst_avg = \
+            e0_entanglement_age_lst_avg = \
+            e1_entanglement_age_lst_avg = \
+            v_entanglement_age_lst_avg = \
             e0_entanglement_state_fraction_lst_avg = e1_entanglement_state_fraction_lst_avg = v_entanglement_state_fraction_lst_avg = \
             e0_cutoff_try_time_lst_avg = e1_cutoff_try_time_lst_avg = v_cutoff_try_time_lst_avg = None
 
@@ -207,10 +207,6 @@ class DqnTrainer:
                     (episode_reward_lst_avg,
                     swap_prob_lst_avg,
 
-                    e0_flat_age_lst_avg,
-                    e1_flat_age_lst_avg,
-                    v_flat_age_lst_avg,
-
                     e0_entanglement_age_lst_avg,
                     e1_entanglement_age_lst_avg,
                     v_entanglement_age_lst_avg,
@@ -246,9 +242,6 @@ class DqnTrainer:
                     "Eps.: {:4.2f},".format(epsilon),
                     "Train Steps: {:5,}".format(self.training_time_steps),
                     "S.P.: {:5.3f}".format(info["swap_prob"]),
-                    "flat_age: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
-                        info["e0_flat_age"], info["e1_flat_age"], info["v_flat_age"]
-                    ),
                     "entanglement_age: {0:3.1f}/{1:3.1f}/{2:3.1f}".format(
                         info["e0_entanglement_age"], info["e1_entanglement_age"], info["v_entanglement_age"]
                     ),
@@ -274,13 +267,6 @@ class DqnTrainer:
 
                         "VALIDATION/Swap Prob. ({0} Episodes)".format(self.config["validation_num_episodes"]):
                             swap_prob_lst_avg,
-
-                        "VALIDATION/E0 Flat Age ({0} Episodes)".format(self.config["validation_num_episodes"]):
-                            e0_flat_age_lst_avg,
-                        "VALIDATION/E1 Flat Age ({0} Episodes)".format(self.config["validation_num_episodes"]):
-                            e1_flat_age_lst_avg,
-                        "VALIDATION/V Flat Age ({0} Episodes)".format(self.config["validation_num_episodes"]):
-                            v_flat_age_lst_avg,
 
                         "VALIDATION/E0 Entang. Age ({0} Episodes)".format(self.config["validation_num_episodes"]):
                             e0_entanglement_age_lst_avg,
@@ -309,10 +295,6 @@ class DqnTrainer:
                         "TRAIN/Replay buffer": self.replay_buffer.size(),
 
                         "TRAIN/Swap Prob.": info["swap_prob"],
-
-                        "TRAIN/E0 Flat Age": info["e0_flat_age"],
-                        "TRAIN/E1 Flat Age": info["e1_flat_age"],
-                        "TRAIN/V Flat Age": info["v_flat_age"],
 
                         "TRAIN/E0 Entang. Age": info["e0_entanglement_age"],
                         "TRAIN/E1 Entang. Age": info["e1_entanglement_age"],
@@ -408,10 +390,6 @@ class DqnTrainer:
         episode_reward_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
         swap_prob_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
 
-        e0_flat_age_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
-        e1_flat_age_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
-        v_flat_age_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
-
         e0_entanglement_age_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
         e1_entanglement_age_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
         v_entanglement_age_lst = np.zeros(shape=(self.config["validation_num_episodes"],), dtype=float)
@@ -444,10 +422,6 @@ class DqnTrainer:
             episode_reward_lst[i] = episode_reward
             swap_prob_lst[i] = info["swap_prob"]
 
-            e0_flat_age_lst[i] = info["e0_flat_age"]
-            e1_flat_age_lst[i] = info["e1_flat_age"]
-            v_flat_age_lst[i] = info["v_flat_age"]
-
             e0_entanglement_age_lst[i] = info["e0_entanglement_age"]
             e1_entanglement_age_lst[i] = info["e1_entanglement_age"]
             v_entanglement_age_lst[i] = info["v_entanglement_age"]
@@ -462,10 +436,6 @@ class DqnTrainer:
 
         episode_reward_lst_avg = np.average(episode_reward_lst)
         swap_prob_lst_avg = np.average(swap_prob_lst)
-
-        e0_flat_age_lst_avg = np.average(e0_flat_age_lst)
-        e1_flat_age_lst_avg = np.average(e1_flat_age_lst)
-        v_flat_age_lst_avg = np.average(v_flat_age_lst)
 
         e0_entanglement_age_lst_avg = np.average(e0_entanglement_age_lst)
         e1_entanglement_age_lst_avg = np.average(e1_entanglement_age_lst)
@@ -490,10 +460,6 @@ class DqnTrainer:
         self.qnet.train()        
         return (episode_reward_lst_avg,
                 swap_prob_lst_avg,
-
-                e0_flat_age_lst_avg,
-                e1_flat_age_lst_avg,
-                v_flat_age_lst_avg,
 
                 e0_entanglement_age_lst_avg,
                 e1_entanglement_age_lst_avg,

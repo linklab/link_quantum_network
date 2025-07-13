@@ -199,14 +199,20 @@ def main():
 
     # 커스텀 네트워크를 사용하여 모델 생성
     policy_kwargs = dict(
-        activation_fn=nn.ReLU,
+        activation_fn=nn.LeakyReLU,
         net_arch=dict(
-            pi=[256, 256],
-            vf=[256, 256]
+            pi=[256, 256, 256],
+            vf=[256, 256, 256]
         )
     )
     model = PPO(
-        "MlpPolicy", policy_kwargs=policy_kwargs, env=train_env, batch_size=256, ent_coef=0.01, vf_coef=1.0, verbose=1
+        "MlpPolicy",
+        policy_kwargs=policy_kwargs,
+        env=train_env,
+        batch_size=512,
+        ent_coef=0.02,
+        vf_coef=1.0,
+        verbose=1
     )
     print(model.policy)
 
