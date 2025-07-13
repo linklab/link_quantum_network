@@ -14,10 +14,10 @@ class QNet(nn.Module):
         super().__init__()
         self.n_features = n_features
         self.action_space = action_space
-        self.fc1 = nn.Linear(n_features, 256)  # fully connected
-        self.fc2 = nn.Linear(256, 256)
-        self.fc3 = nn.Linear(256, 256)        
-        self.fc4 = nn.Linear(256, sum(self.action_space.nvec))
+        self.fc1 = nn.Linear(n_features, 512)  # fully connected
+        self.fc2 = nn.Linear(512, 512)
+        self.fc3 = nn.Linear(512, 512)
+        self.fc4 = nn.Linear(512, sum(self.action_space.nvec))
         self.to(DEVICE)
 
     def forward(self, x):
