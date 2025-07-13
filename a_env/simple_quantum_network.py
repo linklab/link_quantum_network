@@ -304,18 +304,18 @@ class SimpleQuantumNetworkEnv(gym.Env):
             self.quantum_network.edge_dict[edge_idx].age = -1
 
     def do_try_swap(self):
-        self.quantum_network.edge_dict["e0"].entanglement = 0
-        self.quantum_network.edge_dict["e0"].age = -1
-
-        self.quantum_network.edge_dict["e1"].entanglement = 0
-        self.quantum_network.edge_dict["e1"].age = -1
-
         if random.random() <= self.probability_swap():
             self.quantum_network.edge_dict["v"].entanglement = 1
             self.quantum_network.edge_dict["v"].age = 0
         else:
             self.quantum_network.edge_dict["v"].entanglement = 0
             self.quantum_network.edge_dict["v"].age = -1
+
+        self.quantum_network.edge_dict["e0"].entanglement = 0
+        self.quantum_network.edge_dict["e0"].age = -1
+
+        self.quantum_network.edge_dict["e1"].entanglement = 0
+        self.quantum_network.edge_dict["e1"].age = -1
 
     def update_cutoff_try_time(self, edge_idx):
         if self.quantum_network.edge_dict[edge_idx].last_entanglement_try_timestep != -1:
