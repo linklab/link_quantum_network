@@ -29,9 +29,9 @@ def main():
 
     config = {
         "env_name": ENV_NAME,                             # 환경의 이름
-        "max_num_episodes": 3000,                         # 훈련을 위한 최대 에피소드 횟수
+        "max_num_episodes": 10_000,                         # 훈련을 위한 최대 에피소드 횟수
         "batch_size": 512,                                # 훈련시 배치에서 한번에 가져오는 랜덤 배치 사이즈
-        "learning_rate": 0.00002,                        # 학습율
+        "learning_rate": 0.00001,                        # 학습율
         "gamma": 0.99,                                    # 감가율
         "steps_between_train": 2,                         # 훈련 사이의 환경 스텝 수
         "replay_buffer_size": 500_000,                  # 리플레이 버퍼 사이즈
@@ -40,10 +40,10 @@ def main():
         "epsilon_final_scheduled_percent": 0.75,          # Epsilon 최종 값으로 스케줄되는 마지막 에피소드 비율
         "print_episode_interval": 1,                      # Episode 통계 출력에 관한 에피소드 간격
         "target_sync_time_steps_interval": 2_000,         # 기존 Q 모델을 타깃 Q 모델로 동기화시키는 step 간격
-        "validation_time_steps_interval": 20_000,         # 검증 사이 마다 각 훈련 episode 간격
+        "validation_time_steps_interval": 50_000,         # 검증 사이 마다 각 훈련 episode 간격
         "validation_num_episodes": 3,                     # 검증에 수행하는 에피소드 횟수
 
-        "episode_reward_avg_solved": 100,                 # 훈련 종료를 위한 검증 에피소드 리워드의 Average
+        "episode_reward_avg_solved": 200,                 # 훈련 종료를 위한 검증 에피소드 리워드의 Average
 
         "early_stop_patience": 100,
         "early_stop_delta": 0.00001
