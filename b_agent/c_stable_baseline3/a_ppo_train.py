@@ -51,6 +51,8 @@ class EpisodeMetricsLoggingCallback(BaseCallback):
         assert len(dones) == 1
         done = dones[0]
 
+        logs = self.model.logger.name_to_value
+
         # 에피소드가 끝날 때마다 보상과 길이 기록
         if done and self.use_wandb:
             self.episodes += 1
@@ -60,8 +62,6 @@ class EpisodeMetricsLoggingCallback(BaseCallback):
 
             self.train_episode_reward = info["episode"]["r"]
             self.train_swap_prob = info["swap_prob"]
-
-            logs = self.model.logger.name_to_value
 
             self.send_wandb_log(info, learning_rate, logs)
 
@@ -101,9 +101,7 @@ class EpisodeMetricsLoggingCallback(BaseCallback):
             validation_swap_prob_lst[i] = info["swap_prob"]
 
             for edge_idx in ["e0", "e1", "v"]:
-                validation_flat_age_lst[edge_idx][i] = info["{0}_flat_age".format(edge_idx)]
                 validation_entanglement_age_lst[edge_idx][i] = info["{0}_entanglement_age".format(edge_idx)]
-                validation_entanglement_state_fraction_lst[edge_idx][i] = info["{0}_entanglement_state_fraction".format(edge_idx)]
                 validation_cutoff_try_time_lst[edge_idx][i] = info["{0}_cutoff_try_time".format(edge_idx)]
 
         self.validation_episode_reward = np.average(validation_episode_reward_lst)
@@ -220,7 +218,7 @@ def main():
     )
     print(model.policy)
 
-    use_wandb = True
+    use_wandb = False
 
     model.learn(
         total_timesteps=3_000_000,
