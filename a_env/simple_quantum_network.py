@@ -221,6 +221,11 @@ class SimpleQuantumNetworkEnv(gym.Env):
                 self.quantum_network.edge_dict[edge_idx].age
             )
 
+        if self.quantum_network.edge_dict["v"].entanglement == 1:
+            reward = 1.0
+        else:
+            reward = 0.0
+
         # 현재 observation 초기화
         self.current_observation = self.get_observation()
         next_observation = self.current_observation
