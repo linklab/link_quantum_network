@@ -22,14 +22,12 @@ class EpisodeMetricsLoggingCallback(BaseCallback):
 
         self.train_episode_reward = None
         self.train_swap_prob = None
-        self.train_flat_age = {}
         self.train_entanglement_age = {}
         self.train_entanglement_state_fraction = {}
         self.train_cutoff_try_time = {}
 
         self.validation_episode_reward = None
         self.validation_swap_prob = None
-        self.validation_flat_age = {}
         self.validation_entanglement_age = {}
         self.validation_entanglement_state_fraction = {}
         self.validation_cutoff_try_time = {}
@@ -71,13 +69,11 @@ class EpisodeMetricsLoggingCallback(BaseCallback):
         validation_episode_reward_lst = np.zeros(shape=(self.num_validation_episodes,), dtype=float)
         validation_swap_prob_lst = np.zeros(shape=(self.num_validation_episodes,), dtype=float)
 
-        validation_flat_age_lst = {}
         validation_entanglement_age_lst = {}
         validation_entanglement_state_fraction_lst = {}
         validation_cutoff_try_time_lst = {}
 
         for edge_idx in ["e0", "e1", "v"]:
-            validation_flat_age_lst[edge_idx] = np.zeros(shape=(self.num_validation_episodes,), dtype=float)
             validation_entanglement_age_lst[edge_idx] = np.zeros(shape=(self.num_validation_episodes,), dtype=float)
             validation_entanglement_state_fraction_lst[edge_idx] = np.zeros(shape=(self.num_validation_episodes,), dtype=float)
             validation_cutoff_try_time_lst[edge_idx] = np.zeros(shape=(self.num_validation_episodes,), dtype=float)
@@ -107,13 +103,11 @@ class EpisodeMetricsLoggingCallback(BaseCallback):
         self.validation_episode_reward = np.average(validation_episode_reward_lst)
         self.validation_swap_prob = np.average(validation_swap_prob_lst)
 
-        self.validation_flat_age = {}
         self.validation_entanglement_age = {}
         self.validation_entanglement_state_fraction = {}
         self.validation_cutoff_try_time = {}
 
         for edge_idx in ["e0", "e1", "v"]:
-            self.validation_flat_age[edge_idx] = np.average(validation_flat_age_lst[edge_idx])
             self.validation_entanglement_age[edge_idx] = np.average(validation_entanglement_age_lst[edge_idx])
             self.validation_entanglement_state_fraction[edge_idx] = np.average(validation_entanglement_state_fraction_lst[edge_idx])
             self.validation_cutoff_try_time[edge_idx] = np.average(validation_cutoff_try_time_lst[edge_idx])
@@ -182,12 +176,10 @@ class EpisodeMetricsLoggingCallback(BaseCallback):
         }
 
         for edge_idx in ["e0", "e1", "v"]:
-            log_dict["T. METRICS/{0} Flat Age".format(edge_idx)] = info["{0}_flat_age".format(edge_idx)]
             log_dict["T. METRICS/{0} Entang. Age".format(edge_idx)] = info["{0}_entanglement_age".format(edge_idx)]
             log_dict["T. METRICS/{0} Entang. State Fraction".format(edge_idx)] = info["{0}_entanglement_state_fraction".format(edge_idx)]
             log_dict["T. METRICS/{0} Cutoff Try Time".format(edge_idx)] = info["{0}_cutoff_try_time".format(edge_idx)]
 
-            log_dict["V. METRICS/{0} Flat Age".format(edge_idx)] = self.validation_flat_age[edge_idx] if edge_idx in self.validation_flat_age else info["{0}_flat_age".format(edge_idx)]
             log_dict["V. METRICS/{0} Entang. Age".format(edge_idx)] = self.validation_entanglement_age[edge_idx] if edge_idx in self.validation_entanglement_age else info["{0}_entanglement_age".format(edge_idx)]
             log_dict["V. METRICS/{0} Entang. State Fraction".format(edge_idx)] = self.validation_entanglement_state_fraction[edge_idx] if edge_idx in self.validation_entanglement_state_fraction else info["{0}_entanglement_state_fraction".format(edge_idx)]
             log_dict["V. METRICS/{0} Cutoff Try Time".format(edge_idx)] = self.validation_cutoff_try_time[edge_idx] if edge_idx in self.validation_cutoff_try_time else info["{0}_cutoff_try_time".format(edge_idx)]

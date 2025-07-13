@@ -276,6 +276,12 @@ class SimpleQuantumNetworkEnv(gym.Env):
             key = "{0}_state_list".format(edge_idx)
             info[key] = self.quantum_network.edge_dict[edge_idx].state_list
 
+            key = "{0}_entanglement_state_fraction".format(edge_idx)
+            if len(self.quantum_network.edge_dict[edge_idx].state_list) == 0:
+                info[key] = 0.0
+            else:
+                info[key] = sum(self.quantum_network.edge_dict[edge_idx].state_list) / len(self.quantum_network.edge_dict[edge_idx].state_list)
+
             key = "{0}_entanglement_age".format(edge_idx)
             if len(self.quantum_network.edge_dict[edge_idx].age_list) == 0:
                 info[key] = 0.0
