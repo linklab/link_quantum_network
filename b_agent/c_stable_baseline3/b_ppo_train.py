@@ -42,7 +42,7 @@ def main():
     )
     print(model.policy)
 
-    use_wandb = True
+    use_wandb = False
 
     model.learn(
         total_timesteps=10_000_000,

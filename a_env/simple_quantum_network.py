@@ -363,11 +363,13 @@ class SimpleQuantumNetworkEnv(gym.Env):
             )
 
     def probability_entanglement(self, edge_idx):
-        edge_distance = self.quantum_network.edge_dict[edge_idx].distance
+        # edge_distance = self.quantum_network.edge_dict[edge_idx].distance
+        #
+        # prob_entanglement = (1.0 / 2.0) * self.optical_bsm_efficiency * \
+        #                     (self.probability_photon_detection ** 2) * \
+        #                     math.e ** (-1.0 * edge_distance / self.attenuation_length_of_the_optical_fiber)
 
-        prob_entanglement = (1.0 / 2.0) * self.optical_bsm_efficiency * \
-                            (self.probability_photon_detection ** 2) * \
-                            math.e ** (-1.0 * edge_distance / self.attenuation_length_of_the_optical_fiber)
+        prob_entanglement = 0.5
 
         return prob_entanglement
 
