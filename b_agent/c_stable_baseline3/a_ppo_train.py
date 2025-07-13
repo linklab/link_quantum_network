@@ -218,15 +218,15 @@ def main():
     )
     print(model.policy)
 
-    use_wandb = False
+    use_wandb = True
 
     model.learn(
-        total_timesteps=3_000_000,
+        total_timesteps=10_000_000,
         callback=EpisodeMetricsLoggingCallback(
             validation_env=validation_env,
             use_wandb=use_wandb,
-            validation_step_frequency=12_000,
-            num_validation_episodes=5
+            validation_step_frequency=20_000,
+            num_validation_episodes=3
         )
     )
 
