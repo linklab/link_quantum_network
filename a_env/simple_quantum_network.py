@@ -213,6 +213,49 @@ class SimpleQuantumNetworkEnv(gym.Env):
 
         return next_observation, reward, terminated, truncated, info
 
+    def do_wait(self, edge_idx):
+        # age가 max_entanglement_age와 동일하면 entanglement 삭제
+        if self.quantum_network.edge_dict[edge_idx].age >= self.max_entanglement_age:
+            self.quantum_network.edge_dict[edge_idx].entanglement = 0
+            self.quantum_network.edge_dict[edge_idx].age = -1
+        # age가 유효하면
+        else:
+            if self.quantum_network.edge_dict[edge_idx].entanglement == 0:
+                self.quantum_network.edge_dict[edge_idx].age = -1
+            elif self.quantum_network.edge_dict[edge_idx].entanglement == 1:
+                self.quantum_network.edge_dict[edge_idx].age += 1
+            else:
+                raise ValueError()
+
+    def do_try_entanglement(self, edge_idx):
+        if random.random() <= self.probability_entanglement(edge_idx=edge_idx):
+            self.quantum_network.edge_dict[edge_idx].entanglement = 1
+            self.quantum_network.edge_dict[edge_idx].age = 0
+        else:
+            self.quantum_network.edge_dict[edge_idx].entanglement = 0
+            self.quantum_network.edge_dict[edge_idx].age = -1
+
+    def do_try_swap(self):
+        if random.random() <= self.probability_swap():
+            self.quantum_network.edge_dict["v"].entanglement = 1
+            self.quantum_network.edge_dict["v"].age = 0
+        else:
+            self.quantum_network.edge_dict["v"].entanglement = 0
+            self.quantum_network.edge_dict["v"].age = -1
+
+        self.quantum_network.edge_dict["e0"].entanglement = 0
+        self.quantum_network.edge_dict["e0"].age = -1
+
+        self.quantum_network.edge_dict["e1"].entanglement = 0
+        self.quantum_network.edge_dict["e1"].age = -1
+
+    def update_cutoff_try_time(self, edge_idx):
+        if self.quantum_network.edge_dict[edge_idx].last_entanglement_try_timestep != -1:
+            self.quantum_network.edge_dict[edge_idx].cutoff_try_time_list.append(
+                self.current_step - self.quantum_network.edge_dict[edge_idx].last_entanglement_try_timestep
+            )
+        self.quantum_network.edge_dict[edge_idx].last_entanglement_try_timestep = self.current_step
+
     def get_average_valid_sequence(self, age_list):
         result = []
         i = 0
@@ -280,49 +323,6 @@ class SimpleQuantumNetworkEnv(gym.Env):
             info[key] = self.quantum_network.edge_dict[edge_idx].cutoff_try_time_list
 
         return info
-
-    def do_wait(self, edge_idx):
-        # age가 max_entanglement_age와 동일하면 entanglement 삭제
-        if self.quantum_network.edge_dict[edge_idx].age >= self.max_entanglement_age:
-            self.quantum_network.edge_dict[edge_idx].entanglement = 0
-            self.quantum_network.edge_dict[edge_idx].age = -1
-        # age가 유효하면
-        else:
-            if self.quantum_network.edge_dict[edge_idx].entanglement == 0:
-                self.quantum_network.edge_dict[edge_idx].age = -1
-            elif self.quantum_network.edge_dict[edge_idx].entanglement == 1:
-                self.quantum_network.edge_dict[edge_idx].age += 1
-            else:
-                raise ValueError()
-
-    def do_try_entanglement(self, edge_idx):
-        if random.random() <= self.probability_entanglement(edge_idx=edge_idx):
-            self.quantum_network.edge_dict[edge_idx].entanglement = 1
-            self.quantum_network.edge_dict[edge_idx].age = 0
-        else:
-            self.quantum_network.edge_dict[edge_idx].entanglement = 0
-            self.quantum_network.edge_dict[edge_idx].age = -1
-
-    def do_try_swap(self):
-        if random.random() <= self.probability_swap():
-            self.quantum_network.edge_dict["v"].entanglement = 1
-            self.quantum_network.edge_dict["v"].age = 0
-        else:
-            self.quantum_network.edge_dict["v"].entanglement = 0
-            self.quantum_network.edge_dict["v"].age = -1
-
-        self.quantum_network.edge_dict["e0"].entanglement = 0
-        self.quantum_network.edge_dict["e0"].age = -1
-
-        self.quantum_network.edge_dict["e1"].entanglement = 0
-        self.quantum_network.edge_dict["e1"].age = -1
-
-    def update_cutoff_try_time(self, edge_idx):
-        if self.quantum_network.edge_dict[edge_idx].last_entanglement_try_timestep != -1:
-            self.quantum_network.edge_dict[edge_idx].cutoff_try_time_list.append(
-                self.current_step - self.quantum_network.edge_dict[edge_idx].last_entanglement_try_timestep
-            )
-        self.quantum_network.edge_dict[edge_idx].last_entanglement_try_timestep = self.current_step
 
     def probability_entanglement(self, edge_idx):
         # edge_distance = self.quantum_network.edge_dict[edge_idx].distance
